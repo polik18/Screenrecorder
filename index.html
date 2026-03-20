@@ -611,7 +611,11 @@
         // 5. 畫面混合 ( Canvas.captureStream )
         // 等待影片元資料載入以確保寬高正確
         await new Promise(resolve => {
-          previewVideo.onloadedmetadata = () => resolve();
+          if (previewVideo.readyState >= 1) {
+            resolve();
+          } else {
+            previewVideo.onloadedmetadata = () => resolve();
+          }
         });
 
         drawCanvasLoop(); // 啟動畫布渲染
