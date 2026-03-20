@@ -205,6 +205,9 @@
             <i data-lucide="radio" class="w-5 h-5"></i>
             開始擷取與錄製
           </button>
+          <p id="unsupportedWarning" class="text-red-500 text-xs mt-3 text-center hidden bg-red-50 p-2 rounded-lg border border-red-100">
+            ⚠️ 您的裝置或瀏覽器（如手機或平板）不支援網頁螢幕錄影功能，請改用電腦版瀏覽器開啟。
+          </p>
 
           <div class="grid grid-cols-2 gap-3 hidden" id="recordingControls">
             <button id="pauseBtn"
@@ -757,6 +760,16 @@
       videoPlaceholder.classList.remove('hidden');
       playbackVideo.classList.add('hidden');
     });
+
+    // 檢查瀏覽器是否支援 WebRTC 螢幕錄影 (getDisplayMedia)
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      startBtn.disabled = true;
+      startBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700', 'active:scale-[0.98]', 'text-white', 'shadow-blue-600/30');
+      startBtn.classList.add('bg-slate-200', 'text-slate-500', 'cursor-not-allowed', 'shadow-none');
+      startBtn.innerHTML = '<i data-lucide="monitor-off" class="w-5 h-5"></i> 不支援螢幕錄影';
+      document.getElementById('unsupportedWarning').classList.remove('hidden');
+      lucide.createIcons();
+    }
 
   </script>
 </body>
