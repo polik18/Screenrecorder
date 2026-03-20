@@ -1,660 +1,745 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>純前端線上螢幕錄影工具 | Local Screen Recorder Pro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @keyframes pulse-ring {
-            0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-            100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-        .recording-indicator { animation: pulse-ring 2s infinite; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* 攝影機拖曳視窗樣式 */
-        #webcamContainer {
-            position: absolute;
-            width: 200px;
-            aspect-ratio: 16/9;
-            bottom: 20px;
-            right: 20px;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            border: 2px solid rgba(255,255,255,0.8);
-            cursor: grab;
-            z-index: 50;
-            background: #000;
-            display: none;
-            transition: border-color 0.2s;
-        }
-        #webcamContainer:active { cursor: grabbing; border-color: #3b82f6; }
-        #webcamVideo { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
-        
-        /* 隱藏的合成畫布 */
-        #compositingCanvas { display: none; }
-    </style>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>純前端線上螢幕錄影工具 | Local Screen Recorder Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @keyframes pulse-ring {
+      0% {
+        transform: scale(0.8);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+      }
+
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+      }
+
+      100% {
+        transform: scale(0.8);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+      }
+    }
+
+    .recording-indicator {
+      animation: pulse-ring 2s infinite;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* 攝影機拖曳視窗樣式 */
+    #webcamContainer {
+      position: absolute;
+      width: 200px;
+      aspect-ratio: 16/9;
+      bottom: 20px;
+      right: 20px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      cursor: grab;
+      z-index: 50;
+      background: #000;
+      display: none;
+      transition: border-color 0.2s;
+    }
+
+    #webcamContainer:active {
+      cursor: grabbing;
+      border-color: #3b82f6;
+    }
+
+    #webcamVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+    }
+
+    /* 隱藏的合成畫布 */
+    #compositingCanvas {
+      display: none;
+    }
+  </style>
 </head>
+
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col m-0 p-0">
 
-    <header class="w-full bg-white shadow-sm border-b border-slate-200 py-4 px-6 md:px-12 flex justify-between items-center z-10">
-        <div class="flex items-center gap-3">
-            <div class="bg-blue-600 text-white p-2 rounded-lg shadow-md shadow-blue-600/20">
-                <i data-lucide="monitor-play" class="w-6 h-6"></i>
+  <header
+    class="w-full bg-white shadow-sm border-b border-slate-200 py-4 px-6 md:px-12 flex justify-between items-center z-10">
+    <div class="flex items-center gap-3">
+      <div class="bg-blue-600 text-white p-2 rounded-lg shadow-md shadow-blue-600/20">
+        <i data-lucide="monitor-play" class="w-6 h-6"></i>
+      </div>
+      <h1 class="text-xl font-bold tracking-tight">線上螢幕錄影工具 <span
+          class="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md ml-2">Pro</span></h1>
+    </div>
+    <div class="hidden md:flex items-center text-sm text-slate-500 gap-2 bg-slate-100 px-3 py-1.5 rounded-full">
+      <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500"></i>
+      完全本地端運行，保護您的隱私
+    </div>
+  </header>
+
+  <main class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-8 flex flex-col xl:flex-row gap-8">
+
+    <!-- 左側控制面板 -->
+    <section class="xl:w-1/3 flex flex-col gap-6">
+      <div
+        class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-full relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
+        <h2 class="text-2xl font-bold mb-1">錄製設定</h2>
+        <p class="text-slate-500 mb-6 text-sm">自訂您的畫面、音訊與攝影機來源。</p>
+
+        <!-- 錄影模式偏好 -->
+        <div class="mb-5">
+          <label class="block text-sm font-medium text-slate-700 mb-2">預設錄製模式</label>
+          <div class="relative">
+            <select id="displaySurfaceMode"
+              class="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 px-4 rounded-xl leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors cursor-pointer text-sm">
+              <option value="monitor">🖥️ 整個螢幕桌面</option>
+              <option value="window">🪟 特定應用程式視窗</option>
+              <option value="browser">🌐 特定瀏覽器分頁</option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+              <i data-lucide="chevron-down" class="w-4 h-4"></i>
             </div>
-            <h1 class="text-xl font-bold tracking-tight">線上螢幕錄影工具 <span class="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md ml-2">Pro</span></h1>
+          </div>
         </div>
-        <div class="hidden md:flex items-center text-sm text-slate-500 gap-2 bg-slate-100 px-3 py-1.5 rounded-full">
-            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500"></i>
-            完全本地端運行，保護您的隱私
+
+        <!-- 開關選項區塊 -->
+        <div class="space-y-3 mb-8">
+          <!-- 系統音訊 -->
+          <div
+            class="flex items-center justify-between p-3.5 border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-colors rounded-xl cursor-pointer"
+            onclick="document.getElementById('sysAudioToggle').click()">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-indigo-100 text-indigo-600 rounded-lg"><i data-lucide="volume-2" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="font-medium text-sm text-slate-800">錄製系統聲音</p>
+                <p class="text-xs text-slate-500">電腦播放的音樂或會議聲音</p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer" onclick="event.stopPropagation()">
+              <input type="checkbox" id="sysAudioToggle" class="sr-only peer" checked>
+              <div
+                class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500">
+              </div>
+            </label>
+          </div>
+
+          <!-- 麥克風 -->
+          <div
+            class="flex items-center justify-between p-3.5 border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-colors rounded-xl cursor-pointer"
+            onclick="document.getElementById('micToggle').click()">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-amber-100 text-amber-600 rounded-lg"><i data-lucide="mic" class="w-5 h-5"></i></div>
+              <div>
+                <p class="font-medium text-sm text-slate-800">錄製麥克風</p>
+                <p class="text-xs text-slate-500">加入您的語音旁白解說</p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer" onclick="event.stopPropagation()">
+              <input type="checkbox" id="micToggle" class="sr-only peer">
+              <div
+                class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500">
+              </div>
+            </label>
+          </div>
+
+          <!-- 網路攝影機 -->
+          <div
+            class="flex items-center justify-between p-3.5 border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-colors rounded-xl cursor-pointer"
+            onclick="document.getElementById('cameraToggle').click()">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-emerald-100 text-emerald-600 rounded-lg"><i data-lucide="video" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="font-medium text-sm text-slate-800">開啟網路攝影機</p>
+                <p class="text-xs text-slate-500">子母畫面，並可拖曳調整位置</p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer" onclick="event.stopPropagation()">
+              <input type="checkbox" id="cameraToggle" class="sr-only peer">
+              <div
+                class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500">
+              </div>
+            </label>
+          </div>
         </div>
-    </header>
 
-    <main class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-8 flex flex-col xl:flex-row gap-8">
-        
-        <!-- 左側控制面板 -->
-        <section class="xl:w-1/3 flex flex-col gap-6">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-full relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
-                <h2 class="text-2xl font-bold mb-1">錄製設定</h2>
-                <p class="text-slate-500 mb-6 text-sm">自訂您的畫面、音訊與攝影機來源。</p>
-
-                <!-- 錄影模式偏好 -->
-                <div class="mb-5">
-                    <label class="block text-sm font-medium text-slate-700 mb-2">預設錄製模式</label>
-                    <div class="relative">
-                        <select id="displaySurfaceMode" class="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 px-4 rounded-xl leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors cursor-pointer text-sm">
-                            <option value="monitor">🖥️ 整個螢幕桌面</option>
-                            <option value="window">🪟 特定應用程式視窗</option>
-                            <option value="browser">🌐 特定瀏覽器分頁</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                            <i data-lucide="chevron-down" class="w-4 h-4"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 開關選項區塊 -->
-                <div class="space-y-3 mb-8">
-                    <!-- 系統音訊 -->
-                    <div class="flex items-center justify-between p-3.5 border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-colors rounded-xl cursor-pointer" onclick="document.getElementById('sysAudioToggle').click()">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 bg-indigo-100 text-indigo-600 rounded-lg"><i data-lucide="volume-2" class="w-5 h-5"></i></div>
-                            <div>
-                                <p class="font-medium text-sm text-slate-800">錄製系統聲音</p>
-                                <p class="text-xs text-slate-500">電腦播放的音樂或會議聲音</p>
-                            </div>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer" onclick="event.stopPropagation()">
-                            <input type="checkbox" id="sysAudioToggle" class="sr-only peer" checked>
-                            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
-                        </label>
-                    </div>
-
-                    <!-- 麥克風 -->
-                    <div class="flex items-center justify-between p-3.5 border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-colors rounded-xl cursor-pointer" onclick="document.getElementById('micToggle').click()">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 bg-amber-100 text-amber-600 rounded-lg"><i data-lucide="mic" class="w-5 h-5"></i></div>
-                            <div>
-                                <p class="font-medium text-sm text-slate-800">錄製麥克風</p>
-                                <p class="text-xs text-slate-500">加入您的語音旁白解說</p>
-                            </div>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer" onclick="event.stopPropagation()">
-                            <input type="checkbox" id="micToggle" class="sr-only peer">
-                            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-                        </label>
-                    </div>
-
-                    <!-- 網路攝影機 -->
-                    <div class="flex items-center justify-between p-3.5 border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-colors rounded-xl cursor-pointer" onclick="document.getElementById('cameraToggle').click()">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 bg-emerald-100 text-emerald-600 rounded-lg"><i data-lucide="video" class="w-5 h-5"></i></div>
-                            <div>
-                                <p class="font-medium text-sm text-slate-800">開啟網路攝影機</p>
-                                <p class="text-xs text-slate-500">子母畫面，並可拖曳調整位置</p>
-                            </div>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer" onclick="event.stopPropagation()">
-                            <input type="checkbox" id="cameraToggle" class="sr-only peer">
-                            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- 狀態與計時器 -->
-                <div class="flex-grow flex flex-col items-center justify-center py-4">
-                    <div id="statusBadge" class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 font-medium text-sm mb-3 transition-colors">
-                        <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
-                        <span id="statusText">等待設定</span>
-                    </div>
-                    <div class="text-5xl lg:text-6xl font-mono font-light tracking-wider text-slate-800" id="timer">00:00</div>
-                </div>
-
-                <!-- 控制按鈕 -->
-                <div class="mt-auto pt-4">
-                    <button id="startBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 active:scale-[0.98]">
-                        <i data-lucide="radio" class="w-5 h-5"></i>
-                        開始擷取與錄製
-                    </button>
-                    
-                    <div class="grid grid-cols-2 gap-3 hidden" id="recordingControls">
-                        <button id="pauseBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all">
-                            <span id="pauseIconWrapper"><i data-lucide="pause" class="w-5 h-5"></i></span>
-                            <span id="pauseText">暫停</span>
-                        </button>
-                        <button id="stopBtn" class="bg-red-500 hover:bg-red-600 text-white font-medium py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-red-500/30">
-                            <i data-lucide="square" class="w-5 h-5 fill-current"></i>
-                            結束錄影
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 右側：畫面預覽與合成區 -->
-        <section class="xl:w-2/3 flex flex-col gap-6">
-            <!-- 主要畫面容器 -->
-            <div id="videoArea" class="bg-slate-900 rounded-2xl shadow-xl overflow-hidden relative aspect-video flex items-center justify-center border-2 border-slate-800 ring-4 ring-slate-900/5 transition-all">
-                
-                <!-- 預設空狀態 -->
-                <div id="videoPlaceholder" class="text-slate-400 flex flex-col items-center gap-4 p-8 text-center z-10 transition-opacity">
-                    <div class="relative">
-                        <i data-lucide="monitor" class="w-20 h-20 opacity-30"></i>
-                        <i data-lucide="play-circle" class="w-8 h-8 absolute -bottom-2 -right-2 text-blue-500 opacity-80"></i>
-                    </div>
-                    <div>
-                        <p class="text-lg font-medium text-slate-300">畫面預覽區</p>
-                        <p class="text-sm opacity-60 mt-1">點擊左側「開始擷取」以顯示您的螢幕畫面</p>
-                    </div>
-                </div>
-
-                <!-- 預覽容器 (用於排列畫面與攝影機) -->
-                <div id="previewContainer" class="absolute inset-0 w-full h-full hidden bg-black">
-                    <!-- 螢幕畫面 -->
-                    <video id="previewVideo" class="w-full h-full object-contain" autoplay muted playsinline></video>
-                    
-                    <!-- 可拖曳的網路攝影機畫面 (PiP) -->
-                    <div id="webcamContainer">
-                        <video id="webcamVideo" autoplay muted playsinline></video>
-                    </div>
-                </div>
-
-                <!-- 錄製完成後的回放播放器 -->
-                <video id="playbackVideo" class="absolute inset-0 w-full h-full object-contain hidden bg-black" controls playsinline></video>
-            </div>
-
-            <!-- 下載結果區 -->
-            <div id="downloadSection" class="bg-white rounded-2xl shadow-sm border-2 border-emerald-400/50 p-6 hidden flex-col sm:flex-row items-center justify-between gap-5 relative overflow-hidden">
-                <div class="absolute right-0 top-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                <div>
-                    <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        <i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-500"></i>
-                        錄製已順利完成！
-                    </h3>
-                    <p class="text-sm text-slate-500 mt-1">您的影片檔已準備就緒，畫面與音訊皆已成功打包。</p>
-                </div>
-                <div class="flex gap-3 w-full sm:w-auto relative z-10">
-                    <button id="newRecordBtn" class="flex-1 sm:flex-none px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-colors flex justify-center items-center gap-2">
-                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i> 重新錄製
-                    </button>
-                    <a id="downloadLink" class="flex-1 sm:flex-none px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-medium transition-all shadow-lg shadow-emerald-500/30 flex justify-center items-center gap-2 cursor-pointer transform hover:-translate-y-0.5">
-                        <i data-lucide="download" class="w-5 h-5"></i> 下載影片檔
-                    </a>
-                </div>
-            </div>
-            
-            <!-- 隱藏畫布 (用於混合螢幕與攝影機軌道) -->
-            <canvas id="compositingCanvas" width="1920" height="1080"></canvas>
-        </section>
-    </main>
-
-    <footer class="w-full bg-white border-t border-slate-200 mt-auto">
-        <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="text-sm text-slate-500 flex items-center gap-2">
-                &copy; <span id="currentYear"></span> 螢幕錄影工具 Pro
-            </div>
-            
-            <!-- 免責聲明 -->
-            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs text-slate-500 max-w-3xl leading-relaxed text-justify">
-                <strong class="text-slate-700">隱私與免責聲明：</strong><br>
-                本網頁為純前端應用程式，運用瀏覽器內建 WebRTC、MediaRecorder 與 HTML5 Canvas API 進行多軌合成與螢幕擷取。<strong>所有資料處理、影像渲染、音訊混合與檔案打包均 100% 在您的本地端（瀏覽器記憶體內）完成。</strong><br>
-                我們不會，也完全沒有機制去收集、儲存、監聽或上傳您的任何螢幕畫面、攝影機畫面、音訊或個人隱私資料至任何外部伺服器。錄製產生之內容版權與衍生之法律責任由使用者自行承擔。
-            </div>
+        <!-- 狀態與計時器 -->
+        <div class="flex-grow flex flex-col items-center justify-center py-4">
+          <div id="statusBadge"
+            class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 font-medium text-sm mb-3 transition-colors">
+            <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+            <span id="statusText">等待設定</span>
+          </div>
+          <div class="text-5xl lg:text-6xl font-mono font-light tracking-wider text-slate-800" id="timer">00:00</div>
         </div>
-    </footer>
 
-    <script>
-        lucide.createIcons();
-        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        <!-- 控制按鈕 -->
+        <div class="mt-auto pt-4">
+          <button id="startBtn"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 active:scale-[0.98]">
+            <i data-lucide="radio" class="w-5 h-5"></i>
+            開始擷取與錄製
+          </button>
 
-        // DOM 元素
-        const startBtn = document.getElementById('startBtn');
-        const recordingControls = document.getElementById('recordingControls');
-        const pauseBtn = document.getElementById('pauseBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const pauseText = document.getElementById('pauseText');
-        
-        const sysAudioToggle = document.getElementById('sysAudioToggle');
-        const micToggle = document.getElementById('micToggle');
-        const cameraToggle = document.getElementById('cameraToggle');
-        const displaySurfaceMode = document.getElementById('displaySurfaceMode');
-        
-        const previewContainer = document.getElementById('previewContainer');
-        const previewVideo = document.getElementById('previewVideo');
-        const webcamContainer = document.getElementById('webcamContainer');
-        const webcamVideo = document.getElementById('webcamVideo');
-        const playbackVideo = document.getElementById('playbackVideo');
-        const videoPlaceholder = document.getElementById('videoPlaceholder');
-        const videoArea = document.getElementById('videoArea');
-        
-        const downloadSection = document.getElementById('downloadSection');
-        const downloadLink = document.getElementById('downloadLink');
-        const newRecordBtn = document.getElementById('newRecordBtn');
-        
-        const timerDisplay = document.getElementById('timer');
-        const statusBadge = document.getElementById('statusBadge');
-        const statusDot = document.getElementById('statusDot');
-        const statusText = document.getElementById('statusText');
-        
-        const canvas = document.getElementById('compositingCanvas');
-        const ctx = canvas.getContext('2d');
+          <div class="grid grid-cols-2 gap-3 hidden" id="recordingControls">
+            <button id="pauseBtn"
+              class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all">
+              <span id="pauseIconWrapper"><i data-lucide="pause" class="w-5 h-5"></i></span>
+              <span id="pauseText">暫停</span>
+            </button>
+            <button id="stopBtn"
+              class="bg-red-500 hover:bg-red-600 text-white font-medium py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-red-500/30">
+              <i data-lucide="square" class="w-5 h-5 fill-current"></i>
+              結束錄影
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
 
-        // 核心狀態變數
-        let mediaRecorder;
-        let recordedChunks = [];
-        let screenStream = null;
-        let cameraStream = null;
-        let micStream = null;
-        let mixedStream = null;
-        let audioContext = null;
-        
-        let startTime = null;
-        let timerInterval = null;
-        let isPaused = false;
-        let isRecording = false;
-        let animationFrameId = null;
+    <!-- 右側：畫面預覽與合成區 -->
+    <section class="xl:w-2/3 flex flex-col gap-6">
+      <!-- 主要畫面容器 -->
+      <div id="videoArea"
+        class="bg-slate-900 rounded-2xl shadow-xl overflow-hidden relative aspect-video flex items-center justify-center border-2 border-slate-800 ring-4 ring-slate-900/5 transition-all">
 
-        // ------------------------------------------------------------
-        // 攝影機拖曳邏輯 (Draggable PiP)
-        // ------------------------------------------------------------
-        let isDragging = false;
-        let dragStartX, dragStartY;
-        let initialLeft, initialTop;
+        <!-- 預設空狀態 -->
+        <div id="videoPlaceholder"
+          class="text-slate-400 flex flex-col items-center gap-4 p-8 text-center z-10 transition-opacity">
+          <div class="relative">
+            <i data-lucide="monitor" class="w-20 h-20 opacity-30"></i>
+            <i data-lucide="play-circle" class="w-8 h-8 absolute -bottom-2 -right-2 text-blue-500 opacity-80"></i>
+          </div>
+          <div>
+            <p class="text-lg font-medium text-slate-300">畫面預覽區</p>
+            <p class="text-sm opacity-60 mt-1">點擊左側「開始擷取」以顯示您的螢幕畫面</p>
+          </div>
+        </div>
 
-        webcamContainer.addEventListener('mousedown', dragStart);
-        webcamContainer.addEventListener('touchstart', dragStart, {passive: false});
-        document.addEventListener('mousemove', drag);
-        document.addEventListener('touchmove', drag, {passive: false});
-        document.addEventListener('mouseup', dragEnd);
-        document.addEventListener('touchend', dragEnd);
+        <!-- 預覽容器 (用於排列畫面與攝影機) -->
+        <div id="previewContainer" class="absolute inset-0 w-full h-full hidden bg-black">
+          <!-- 螢幕畫面 -->
+          <video id="previewVideo" class="w-full h-full object-contain" autoplay muted playsinline></video>
 
-        function dragStart(e) {
-            if (!cameraToggle.checked || e.target !== webcamContainer) return;
-            isDragging = true;
-            const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-            const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-            
-            dragStartX = clientX;
-            dragStartY = clientY;
-            
-            const rect = webcamContainer.getBoundingClientRect();
-            const parentRect = previewContainer.getBoundingClientRect();
-            
-            initialLeft = rect.left - parentRect.left;
-            initialTop = rect.top - parentRect.top;
-            
-            // 將 bottom/right 定位改為 left/top 方便計算
-            webcamContainer.style.bottom = 'auto';
-            webcamContainer.style.right = 'auto';
-            webcamContainer.style.left = `${initialLeft}px`;
-            webcamContainer.style.top = `${initialTop}px`;
+          <!-- 可拖曳的網路攝影機畫面 (PiP) -->
+          <div id="webcamContainer">
+            <video id="webcamVideo" autoplay muted playsinline></video>
+          </div>
+        </div>
+
+        <!-- 錄製完成後的回放播放器 -->
+        <video id="playbackVideo" class="absolute inset-0 w-full h-full object-contain hidden bg-black" controls
+          playsinline></video>
+      </div>
+
+      <!-- 下載結果區 -->
+      <div id="downloadSection"
+        class="bg-white rounded-2xl shadow-sm border-2 border-emerald-400/50 p-6 hidden flex-col sm:flex-row items-center justify-between gap-5 relative overflow-hidden">
+        <div
+          class="absolute right-0 top-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2">
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-500"></i>
+            錄製已順利完成！
+          </h3>
+          <p class="text-sm text-slate-500 mt-1">您的影片檔已準備就緒，畫面與音訊皆已成功打包。</p>
+        </div>
+        <div class="flex gap-3 w-full sm:w-auto relative z-10">
+          <button id="newRecordBtn"
+            class="flex-1 sm:flex-none px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-colors flex justify-center items-center gap-2">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i> 重新錄製
+          </button>
+          <a id="downloadLink"
+            class="flex-1 sm:flex-none px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-medium transition-all shadow-lg shadow-emerald-500/30 flex justify-center items-center gap-2 cursor-pointer transform hover:-translate-y-0.5">
+            <i data-lucide="download" class="w-5 h-5"></i> 下載影片檔
+          </a>
+        </div>
+      </div>
+
+      <!-- 隱藏畫布 (用於混合螢幕與攝影機軌道) -->
+      <canvas id="compositingCanvas" width="1920" height="1080"></canvas>
+    </section>
+  </main>
+
+  <footer class="w-full bg-white border-t border-slate-200 mt-auto">
+    <div
+      class="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-8 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="text-sm text-slate-500 flex items-center gap-2">
+        &copy; <span id="currentYear"></span> 螢幕錄影工具 Pro
+      </div>
+
+      <!-- 免責聲明 -->
+      <div
+        class="bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs text-slate-500 max-w-3xl leading-relaxed text-justify">
+        <strong class="text-slate-700">隱私與免責聲明：</strong><br>
+        本網頁為純前端應用程式，運用瀏覽器內建 WebRTC、MediaRecorder 與 HTML5 Canvas API 進行多軌合成與螢幕擷取。<strong>所有資料處理、影像渲染、音訊混合與檔案打包均 100%
+          在您的本地端（瀏覽器記憶體內）完成。</strong><br>
+        我們不會，也完全沒有機制去收集、儲存、監聽或上傳您的任何螢幕畫面、攝影機畫面、音訊或個人隱私資料至任何外部伺服器。錄製產生之內容版權與衍生之法律責任由使用者自行承擔。
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+    // DOM 元素
+    const startBtn = document.getElementById('startBtn');
+    const recordingControls = document.getElementById('recordingControls');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const pauseText = document.getElementById('pauseText');
+
+    const sysAudioToggle = document.getElementById('sysAudioToggle');
+    const micToggle = document.getElementById('micToggle');
+    const cameraToggle = document.getElementById('cameraToggle');
+    const displaySurfaceMode = document.getElementById('displaySurfaceMode');
+
+    const previewContainer = document.getElementById('previewContainer');
+    const previewVideo = document.getElementById('previewVideo');
+    const webcamContainer = document.getElementById('webcamContainer');
+    const webcamVideo = document.getElementById('webcamVideo');
+    const playbackVideo = document.getElementById('playbackVideo');
+    const videoPlaceholder = document.getElementById('videoPlaceholder');
+    const videoArea = document.getElementById('videoArea');
+
+    const downloadSection = document.getElementById('downloadSection');
+    const downloadLink = document.getElementById('downloadLink');
+    const newRecordBtn = document.getElementById('newRecordBtn');
+
+    const timerDisplay = document.getElementById('timer');
+    const statusBadge = document.getElementById('statusBadge');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+
+    const canvas = document.getElementById('compositingCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // 核心狀態變數
+    let mediaRecorder;
+    let recordingMimeType = 'video/webm';
+    let recordedChunks = [];
+    let screenStream = null;
+    let cameraStream = null;
+    let micStream = null;
+    let mixedStream = null;
+    let audioContext = null;
+
+    let startTime = null;
+    let timerInterval = null;
+    let isPaused = false;
+    let isRecording = false;
+    let animationFrameId = null;
+
+    // ------------------------------------------------------------
+    // 攝影機拖曳邏輯 (Draggable PiP)
+    // ------------------------------------------------------------
+    let isDragging = false;
+    let dragStartX, dragStartY;
+    let initialLeft, initialTop;
+
+    webcamContainer.addEventListener('mousedown', dragStart);
+    webcamContainer.addEventListener('touchstart', dragStart, { passive: false });
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('touchmove', drag, { passive: false });
+    document.addEventListener('mouseup', dragEnd);
+    document.addEventListener('touchend', dragEnd);
+
+    function dragStart(e) {
+      if (!cameraToggle.checked || e.target !== webcamContainer) return;
+      isDragging = true;
+      const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+      const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+
+      dragStartX = clientX;
+      dragStartY = clientY;
+
+      const rect = webcamContainer.getBoundingClientRect();
+      const parentRect = previewContainer.getBoundingClientRect();
+
+      initialLeft = rect.left - parentRect.left;
+      initialTop = rect.top - parentRect.top;
+
+      // 將 bottom/right 定位改為 left/top 方便計算
+      webcamContainer.style.bottom = 'auto';
+      webcamContainer.style.right = 'auto';
+      webcamContainer.style.left = `${initialLeft}px`;
+      webcamContainer.style.top = `${initialTop}px`;
+    }
+
+    function drag(e) {
+      if (!isDragging) return;
+      e.preventDefault();
+
+      const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+      const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+
+      const dx = clientX - dragStartX;
+      const dy = clientY - dragStartY;
+
+      let newLeft = initialLeft + dx;
+      let newTop = initialTop + dy;
+
+      // 邊界限制
+      const maxLeft = previewContainer.offsetWidth - webcamContainer.offsetWidth;
+      const maxTop = previewContainer.offsetHeight - webcamContainer.offsetHeight;
+
+      newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+      newTop = Math.max(0, Math.min(newTop, maxTop));
+
+      webcamContainer.style.left = `${newLeft}px`;
+      webcamContainer.style.top = `${newTop}px`;
+    }
+
+    function dragEnd() {
+      isDragging = false;
+    }
+
+    // ------------------------------------------------------------
+    // UI 狀態管理
+    // ------------------------------------------------------------
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+      const s = (seconds % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function updateTimer() {
+      if (!startTime || isPaused) return;
+      const now = Date.now();
+      const diff = Math.floor((now - startTime) / 1000);
+      timerDisplay.textContent = formatTime(diff);
+    }
+
+    function setUIState(state) {
+      switch (state) {
+        case 'ready':
+          startBtn.classList.remove('hidden');
+          recordingControls.classList.add('hidden');
+          statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 font-medium text-sm mb-3 transition-colors';
+          statusDot.className = 'w-2.5 h-2.5 rounded-full bg-slate-400';
+          statusText.textContent = '等待設定';
+          timerDisplay.textContent = '00:00';
+          videoArea.classList.remove('ring-red-500/50', 'border-red-500');
+          videoArea.classList.add('border-slate-800');
+          break;
+        case 'recording':
+          startBtn.classList.add('hidden');
+          recordingControls.classList.remove('hidden');
+          statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-100 text-red-600 font-medium text-sm mb-3 transition-colors';
+          statusDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 recording-indicator';
+          statusText.textContent = '錄影中...';
+          document.getElementById('pauseIconWrapper').innerHTML = '<i data-lucide="pause" class="w-5 h-5"></i>';
+          pauseText.textContent = '暫停';
+          lucide.createIcons();
+          downloadSection.classList.add('hidden');
+          videoPlaceholder.classList.add('hidden');
+          playbackVideo.classList.add('hidden');
+          previewContainer.classList.remove('hidden');
+          videoArea.classList.remove('border-slate-800');
+          videoArea.classList.add('border-red-500', 'ring-red-500/20');
+          break;
+        case 'paused':
+          statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 text-amber-700 font-medium text-sm mb-3 transition-colors';
+          statusDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500';
+          statusText.textContent = '已暫停';
+          document.getElementById('pauseIconWrapper').innerHTML = '<i data-lucide="play" class="w-5 h-5"></i>';
+          pauseText.textContent = '繼續';
+          lucide.createIcons();
+          break;
+        case 'finished':
+          startBtn.classList.add('hidden');
+          recordingControls.classList.add('hidden');
+          statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-700 font-medium text-sm mb-3 transition-colors';
+          statusDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500';
+          statusText.textContent = '錄製完成';
+          previewContainer.classList.add('hidden');
+          playbackVideo.classList.remove('hidden');
+          downloadSection.classList.remove('hidden');
+          downloadSection.classList.add('flex');
+          videoArea.classList.remove('ring-red-500/20', 'border-red-500');
+          videoArea.classList.add('border-emerald-400');
+          break;
+      }
+    }
+
+    // ------------------------------------------------------------
+    // 核心錄影與畫布合成邏輯
+    // ------------------------------------------------------------
+
+    // 畫布渲染循環 (將螢幕和攝影機畫在一起)
+    function drawCanvasLoop() {
+      if (!isRecording) return;
+
+      // 以螢幕畫面作為基準解析度
+      if (previewVideo.videoWidth > 0 && canvas.width !== previewVideo.videoWidth) {
+        canvas.width = previewVideo.videoWidth;
+        canvas.height = previewVideo.videoHeight;
+      }
+
+      if (canvas.width > 0 && canvas.height > 0) {
+        // 1. 畫底圖 (螢幕)
+        ctx.drawImage(previewVideo, 0, 0, canvas.width, canvas.height);
+
+        // 2. 畫上層 (攝影機子母畫面)
+        if (cameraToggle.checked && webcamVideo.videoWidth > 0) {
+          // 計算網頁上相對位置，映射到畫布實際像素上
+          const parentRect = previewContainer.getBoundingClientRect();
+          const camRect = webcamContainer.getBoundingClientRect();
+
+          // 計算出攝影機相對於螢幕容器的比例 (0~1)
+          const relX = (camRect.left - parentRect.left) / parentRect.width;
+          const relY = (camRect.top - parentRect.top) / parentRect.height;
+          const relW = camRect.width / parentRect.width;
+          const relH = camRect.height / parentRect.height;
+
+          // 畫在 Canvas 對應的像素位置上
+          const drawX = relX * canvas.width;
+          const drawY = relY * canvas.height;
+          const drawW = relW * canvas.width;
+          const drawH = relH * canvas.height;
+
+          // 加一點陰影和圓角視覺效果(非完美圓角，因畫布限制，但加邊框)
+          ctx.save();
+          ctx.shadowColor = "rgba(0,0,0,0.5)";
+          ctx.shadowBlur = 20;
+          ctx.shadowOffsetX = 5;
+          ctx.shadowOffsetY = 10;
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = "white";
+
+          ctx.drawImage(webcamVideo, drawX, drawY, drawW, drawH);
+          ctx.strokeRect(drawX, drawY, drawW, drawH);
+          ctx.restore();
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(drawCanvasLoop);
+    }
+
+    // 啟動錄製流程
+    async function startRecording() {
+      try {
+        recordedChunks = [];
+        isRecording = true; // 提前設定狀態讓畫布可以跑
+
+        // 1. 獲取螢幕畫面 (依據下拉選單偏好設定)
+        const displayMediaOptions = {
+          video: {
+            displaySurface: displaySurfaceMode.value,
+            frameRate: { ideal: 30, max: 60 }
+          },
+          audio: sysAudioToggle.checked
+        };
+        screenStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+        previewVideo.srcObject = screenStream;
+
+        // 2. 獲取攝影機 (如果開啟)
+        if (cameraToggle.checked) {
+          try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({
+              video: { width: { ideal: 1280 }, height: { ideal: 720 } }
+            });
+            webcamVideo.srcObject = cameraStream;
+            webcamContainer.style.display = 'block';
+            // 確保攝影機視窗重製為右下角
+            webcamContainer.style.bottom = '20px';
+            webcamContainer.style.right = '20px';
+            webcamContainer.style.left = 'auto';
+            webcamContainer.style.top = 'auto';
+          } catch (e) {
+            alert("無法存取攝影機，可能是權限被拒絕。");
+            cameraToggle.checked = false;
+          }
+        } else {
+          webcamContainer.style.display = 'none';
         }
 
-        function drag(e) {
-            if (!isDragging) return;
-            e.preventDefault();
-            
-            const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-            const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-            
-            const dx = clientX - dragStartX;
-            const dy = clientY - dragStartY;
-            
-            let newLeft = initialLeft + dx;
-            let newTop = initialTop + dy;
-            
-            // 邊界限制
-            const maxLeft = previewContainer.offsetWidth - webcamContainer.offsetWidth;
-            const maxTop = previewContainer.offsetHeight - webcamContainer.offsetHeight;
-            
-            newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-            newTop = Math.max(0, Math.min(newTop, maxTop));
-            
-            webcamContainer.style.left = `${newLeft}px`;
-            webcamContainer.style.top = `${newTop}px`;
+        // 3. 獲取麥克風音訊 (如果開啟)
+        if (micToggle.checked) {
+          try {
+            micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          } catch (e) {
+            alert("無法存取麥克風，將略過麥克風錄音。");
+            micToggle.checked = false;
+          }
         }
 
-        function dragEnd() {
-            isDragging = false;
+        // 4. 音訊混合 (Web Audio API)
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const audioDestination = audioContext.createMediaStreamDestination();
+        let hasAudio = false;
+
+        if (sysAudioToggle.checked && screenStream.getAudioTracks().length > 0) {
+          const sysAudioSource = audioContext.createMediaStreamSource(new MediaStream([screenStream.getAudioTracks()[0]]));
+          sysAudioSource.connect(audioDestination);
+          hasAudio = true;
         }
 
-        // ------------------------------------------------------------
-        // UI 狀態管理
-        // ------------------------------------------------------------
-        function formatTime(seconds) {
-            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-            const s = (seconds % 60).toString().padStart(2, '0');
-            return `${m}:${s}`;
+        if (micToggle.checked && micStream && micStream.getAudioTracks().length > 0) {
+          const micAudioSource = audioContext.createMediaStreamSource(micStream);
+          micAudioSource.connect(audioDestination);
+          hasAudio = true;
         }
 
-        function updateTimer() {
-            if (!startTime || isPaused) return;
-            const now = Date.now();
-            const diff = Math.floor((now - startTime) / 1000);
-            timerDisplay.textContent = formatTime(diff);
-        }
-
-        function setUIState(state) {
-            switch(state) {
-                case 'ready':
-                    startBtn.classList.remove('hidden');
-                    recordingControls.classList.add('hidden');
-                    statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 font-medium text-sm mb-3 transition-colors';
-                    statusDot.className = 'w-2.5 h-2.5 rounded-full bg-slate-400';
-                    statusText.textContent = '等待設定';
-                    timerDisplay.textContent = '00:00';
-                    videoArea.classList.remove('ring-red-500/50', 'border-red-500');
-                    videoArea.classList.add('border-slate-800');
-                    break;
-                case 'recording':
-                    startBtn.classList.add('hidden');
-                    recordingControls.classList.remove('hidden');
-                    statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-100 text-red-600 font-medium text-sm mb-3 transition-colors';
-                    statusDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 recording-indicator';
-                    statusText.textContent = '錄影中...';
-                    document.getElementById('pauseIconWrapper').innerHTML = '<i data-lucide="pause" class="w-5 h-5"></i>';
-                    pauseText.textContent = '暫停';
-                    lucide.createIcons();
-                    downloadSection.classList.add('hidden');
-                    videoPlaceholder.classList.add('hidden');
-                    playbackVideo.classList.add('hidden');
-                    previewContainer.classList.remove('hidden');
-                    videoArea.classList.remove('border-slate-800');
-                    videoArea.classList.add('border-red-500', 'ring-red-500/20');
-                    break;
-                case 'paused':
-                    statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 text-amber-700 font-medium text-sm mb-3 transition-colors';
-                    statusDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500';
-                    statusText.textContent = '已暫停';
-                    document.getElementById('pauseIconWrapper').innerHTML = '<i data-lucide="play" class="w-5 h-5"></i>';
-                    pauseText.textContent = '繼續';
-                    lucide.createIcons();
-                    break;
-                case 'finished':
-                    startBtn.classList.add('hidden');
-                    recordingControls.classList.add('hidden');
-                    statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-700 font-medium text-sm mb-3 transition-colors';
-                    statusDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500';
-                    statusText.textContent = '錄製完成';
-                    previewContainer.classList.add('hidden');
-                    playbackVideo.classList.remove('hidden');
-                    downloadSection.classList.remove('hidden');
-                    downloadSection.classList.add('flex');
-                    videoArea.classList.remove('ring-red-500/20', 'border-red-500');
-                    videoArea.classList.add('border-emerald-400');
-                    break;
-            }
-        }
-
-        // ------------------------------------------------------------
-        // 核心錄影與畫布合成邏輯
-        // ------------------------------------------------------------
-        
-        // 畫布渲染循環 (將螢幕和攝影機畫在一起)
-        function drawCanvasLoop() {
-            if (!isRecording) return;
-            
-            // 以螢幕畫面作為基準解析度
-            if (previewVideo.videoWidth > 0 && canvas.width !== previewVideo.videoWidth) {
-                canvas.width = previewVideo.videoWidth;
-                canvas.height = previewVideo.videoHeight;
-            }
-
-            if (canvas.width > 0 && canvas.height > 0) {
-                // 1. 畫底圖 (螢幕)
-                ctx.drawImage(previewVideo, 0, 0, canvas.width, canvas.height);
-
-                // 2. 畫上層 (攝影機子母畫面)
-                if (cameraToggle.checked && webcamVideo.videoWidth > 0) {
-                    // 計算網頁上相對位置，映射到畫布實際像素上
-                    const parentRect = previewContainer.getBoundingClientRect();
-                    const camRect = webcamContainer.getBoundingClientRect();
-                    
-                    // 計算出攝影機相對於螢幕容器的比例 (0~1)
-                    const relX = (camRect.left - parentRect.left) / parentRect.width;
-                    const relY = (camRect.top - parentRect.top) / parentRect.height;
-                    const relW = camRect.width / parentRect.width;
-                    const relH = camRect.height / parentRect.height;
-
-                    // 畫在 Canvas 對應的像素位置上
-                    const drawX = relX * canvas.width;
-                    const drawY = relY * canvas.height;
-                    const drawW = relW * canvas.width;
-                    const drawH = relH * canvas.height;
-
-                    // 加一點陰影和圓角視覺效果(非完美圓角，因畫布限制，但加邊框)
-                    ctx.save();
-                    ctx.shadowColor = "rgba(0,0,0,0.5)";
-                    ctx.shadowBlur = 20;
-                    ctx.shadowOffsetX = 5;
-                    ctx.shadowOffsetY = 10;
-                    ctx.lineWidth = 4;
-                    ctx.strokeStyle = "white";
-                    
-                    ctx.drawImage(webcamVideo, drawX, drawY, drawW, drawH);
-                    ctx.strokeRect(drawX, drawY, drawW, drawH);
-                    ctx.restore();
-                }
-            }
-            
-            animationFrameId = requestAnimationFrame(drawCanvasLoop);
-        }
-
-        // 啟動錄製流程
-        async function startRecording() {
-            try {
-                recordedChunks = [];
-                isRecording = true; // 提前設定狀態讓畫布可以跑
-                
-                // 1. 獲取螢幕畫面 (依據下拉選單偏好設定)
-                const displayMediaOptions = {
-                    video: { 
-                        displaySurface: displaySurfaceMode.value, 
-                        frameRate: { ideal: 30, max: 60 }
-                    },
-                    audio: sysAudioToggle.checked
-                };
-                screenStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
-                previewVideo.srcObject = screenStream;
-
-                // 2. 獲取攝影機 (如果開啟)
-                if (cameraToggle.checked) {
-                    try {
-                        cameraStream = await navigator.mediaDevices.getUserMedia({ 
-                            video: { width: { ideal: 1280 }, height: { ideal: 720 } } 
-                        });
-                        webcamVideo.srcObject = cameraStream;
-                        webcamContainer.style.display = 'block';
-                        // 確保攝影機視窗重製為右下角
-                        webcamContainer.style.bottom = '20px';
-                        webcamContainer.style.right = '20px';
-                        webcamContainer.style.left = 'auto';
-                        webcamContainer.style.top = 'auto';
-                    } catch (e) {
-                        alert("無法存取攝影機，可能是權限被拒絕。");
-                        cameraToggle.checked = false;
-                    }
-                } else {
-                    webcamContainer.style.display = 'none';
-                }
-
-                // 3. 獲取麥克風音訊 (如果開啟)
-                if (micToggle.checked) {
-                    try {
-                        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    } catch (e) {
-                        alert("無法存取麥克風，將略過麥克風錄音。");
-                        micToggle.checked = false;
-                    }
-                }
-
-                // 4. 音訊混合 (Web Audio API)
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const audioDestination = audioContext.createMediaStreamDestination();
-                let hasAudio = false;
-
-                if (sysAudioToggle.checked && screenStream.getAudioTracks().length > 0) {
-                    const sysAudioSource = audioContext.createMediaStreamSource(new MediaStream([screenStream.getAudioTracks()[0]]));
-                    sysAudioSource.connect(audioDestination);
-                    hasAudio = true;
-                }
-                
-                if (micToggle.checked && micStream && micStream.getAudioTracks().length > 0) {
-                    const micAudioSource = audioContext.createMediaStreamSource(micStream);
-                    micAudioSource.connect(audioDestination);
-                    hasAudio = true;
-                }
-
-                // 5. 畫面混合 ( Canvas.captureStream )
-                // 等待影片元資料載入以確保寬高正確
-                await new Promise(resolve => {
-                    previewVideo.onloadedmetadata = () => resolve();
-                });
-                
-                drawCanvasLoop(); // 啟動畫布渲染
-                
-                // 從畫布抓取影像軌 (30 FPS)
-                const canvasStream = canvas.captureStream(30);
-                const videoTrack = canvasStream.getVideoTracks()[0];
-                
-                // 合併影像與音訊軌
-                const tracksToRecord = [videoTrack];
-                if (hasAudio) {
-                    tracksToRecord.push(audioDestination.stream.getAudioTracks()[0]);
-                }
-                mixedStream = new MediaStream(tracksToRecord);
-
-                // 當使用者按瀏覽器原生的「停止共用」按鈕時觸發
-                screenStream.getVideoTracks()[0].onended = () => {
-                    if (isRecording) stopRecording();
-                };
-
-                // 6. 設定 MediaRecorder 並優先尋求支援 MP4
-                const mimeTypes = [
-                    'video/mp4',
-                    'video/webm;codecs=h264,aac',
-                    'video/webm;codecs=h264,opus',
-                    'video/webm;codecs=vp9,opus',
-                    'video/webm'
-                ];
-                const selectedMimeType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || 'video/webm';
-                               
-                mediaRecorder = new MediaRecorder(mixedStream, { 
-                    mimeType: selectedMimeType,
-                    videoBitsPerSecond: 5000000 // 5Mbps 高畫質
-                });
-
-                mediaRecorder.ondataavailable = function(e) {
-                    if (e.data.size > 0) recordedChunks.push(e.data);
-                };
-
-                mediaRecorder.onstop = exportVideo;
-
-                mediaRecorder.start(1000); 
-                isPaused = false;
-                
-                startTime = Date.now();
-                timerInterval = setInterval(updateTimer, 1000);
-                
-                setUIState('recording');
-
-            } catch (err) {
-                console.error("啟動錄影失敗: ", err);
-                isRecording = false;
-                if (err.name !== 'NotAllowedError' && err.name !== 'AbortError') {
-                    alert("啟動錄影發生錯誤: " + err.message);
-                }
-                stopMediaTracks(); // 清理可能殘留的軌道
-            }
-        }
-
-        // 清理所有 MediaTracks
-        function stopMediaTracks() {
-            if (screenStream) screenStream.getTracks().forEach(t => t.stop());
-            if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
-            if (micStream) micStream.getTracks().forEach(t => t.stop());
-            if (mixedStream) mixedStream.getTracks().forEach(t => t.stop());
-            if (audioContext && audioContext.state !== 'closed') audioContext.close();
-        }
-
-        function togglePause() {
-            if (!mediaRecorder) return;
-            if (mediaRecorder.state === 'recording') {
-                mediaRecorder.pause();
-                isPaused = true;
-                setUIState('paused');
-            } else if (mediaRecorder.state === 'paused') {
-                mediaRecorder.resume();
-                isPaused = false;
-                setUIState('recording');
-            }
-        }
-
-        function stopRecording() {
-            isRecording = false;
-            cancelAnimationFrame(animationFrameId);
-            clearInterval(timerInterval);
-            
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-            }
-            stopMediaTracks();
-            setUIState('finished');
-        }
-
-        function exportVideo() {
-            // 強制宣告為 mp4 格式，方便各種播放器識別
-            const blob = new Blob(recordedChunks, { type: 'video/mp4' });
-            const url = URL.createObjectURL(blob);
-            
-            playbackVideo.src = url;
-            
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
-            downloadLink.href = url;
-            // 副檔名強制改為 mp4
-            downloadLink.download = `ScreenRecord_Pro_${timestamp}.mp4`;
-        }
-
-        // 事件綁定
-        startBtn.addEventListener('click', startRecording);
-        pauseBtn.addEventListener('click', togglePause);
-        stopBtn.addEventListener('click', stopRecording);
-        newRecordBtn.addEventListener('click', () => {
-            playbackVideo.src = "";
-            videoArea.classList.remove('border-emerald-400');
-            setUIState('ready');
-            videoPlaceholder.classList.remove('hidden');
-            playbackVideo.classList.add('hidden');
+        // 5. 畫面混合 ( Canvas.captureStream )
+        // 等待影片元資料載入以確保寬高正確
+        await new Promise(resolve => {
+          previewVideo.onloadedmetadata = () => resolve();
         });
 
-    </script>
+        drawCanvasLoop(); // 啟動畫布渲染
+
+        // 從畫布抓取影像軌 (30 FPS)
+        const canvasStream = canvas.captureStream(30);
+        const videoTrack = canvasStream.getVideoTracks()[0];
+
+        // 合併影像與音訊軌
+        const tracksToRecord = [videoTrack];
+        if (hasAudio) {
+          tracksToRecord.push(audioDestination.stream.getAudioTracks()[0]);
+        }
+        mixedStream = new MediaStream(tracksToRecord);
+
+        // 當使用者按瀏覽器原生的「停止共用」按鈕時觸發
+        screenStream.getVideoTracks()[0].onended = () => {
+          if (isRecording) stopRecording();
+        };
+
+        // 6. 設定 MediaRecorder 並優先尋求支援 MP4
+        const mimeTypes = [
+          'video/mp4',
+          'video/webm;codecs=h264,aac',
+          'video/webm;codecs=h264,opus',
+          'video/webm;codecs=vp9,opus',
+          'video/webm'
+        ];
+        const selectedMimeType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || 'video/webm';
+        recordingMimeType = selectedMimeType;
+
+        mediaRecorder = new MediaRecorder(mixedStream, {
+          mimeType: selectedMimeType,
+          videoBitsPerSecond: 5000000 // 5Mbps 高畫質
+        });
+
+        mediaRecorder.ondataavailable = function (e) {
+          if (e.data.size > 0) recordedChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = exportVideo;
+
+        mediaRecorder.start(1000);
+        isPaused = false;
+
+        startTime = Date.now();
+        timerInterval = setInterval(updateTimer, 1000);
+
+        setUIState('recording');
+
+      } catch (err) {
+        console.error("啟動錄影失敗: ", err);
+        isRecording = false;
+
+        // 避免將瀏覽器的原生權限錯誤訊息直接用 alert() 強制彈出干擾使用者
+        const errMsg = err.message || '';
+        const isPermissionBug = errMsg.includes('系統音訊') || errMsg.includes('System Settings') || err.name === 'NotReadableError' || err.name === 'NotAllowedError';
+
+        if (!isPermissionBug && err.name !== 'AbortError') {
+          alert("啟動錄影發生意外錯誤: " + errMsg);
+        }
+
+        stopMediaTracks(); // 清理可能殘留的軌道
+        setUIState('ready'); // 確保 UI 恢復可點擊狀態
+      }
+    }
+
+    // 清理所有 MediaTracks
+    function stopMediaTracks() {
+      if (screenStream) screenStream.getTracks().forEach(t => t.stop());
+      if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+      if (micStream) micStream.getTracks().forEach(t => t.stop());
+      if (mixedStream) mixedStream.getTracks().forEach(t => t.stop());
+      if (audioContext && audioContext.state !== 'closed') audioContext.close();
+    }
+
+    function togglePause() {
+      if (!mediaRecorder) return;
+      if (mediaRecorder.state === 'recording') {
+        mediaRecorder.pause();
+        isPaused = true;
+        setUIState('paused');
+      } else if (mediaRecorder.state === 'paused') {
+        mediaRecorder.resume();
+        isPaused = false;
+        setUIState('recording');
+      }
+    }
+
+    function stopRecording() {
+      isRecording = false;
+      cancelAnimationFrame(animationFrameId);
+      clearInterval(timerInterval);
+
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+      stopMediaTracks();
+      setUIState('finished');
+    }
+
+    function exportVideo() {
+      const mimeType = recordingMimeType;
+      const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+
+      const blob = new Blob(recordedChunks, { type: mimeType });
+      const url = URL.createObjectURL(blob);
+
+      playbackVideo.src = url;
+
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+      downloadLink.href = url;
+      downloadLink.download = `ScreenRecord_Pro_${timestamp}.${ext}`;
+    }
+
+    // 事件綁定
+    startBtn.addEventListener('click', startRecording);
+    pauseBtn.addEventListener('click', togglePause);
+    stopBtn.addEventListener('click', stopRecording);
+    newRecordBtn.addEventListener('click', () => {
+      playbackVideo.src = "";
+      videoArea.classList.remove('border-emerald-400');
+      setUIState('ready');
+      videoPlaceholder.classList.remove('hidden');
+      playbackVideo.classList.add('hidden');
+    });
+
+  </script>
 </body>
+
 </html>
