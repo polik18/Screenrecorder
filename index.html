@@ -147,7 +147,7 @@
                     
                     <div class="grid grid-cols-2 gap-3 hidden" id="recordingControls">
                         <button id="pauseBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all">
-                            <i data-lucide="pause" class="w-5 h-5"></i>
+                            <span id="pauseIconWrapper"><i data-lucide="pause" class="w-5 h-5"></i></span>
                             <span id="pauseText">暫停</span>
                         </button>
                         <button id="stopBtn" class="bg-red-500 hover:bg-red-600 text-white font-medium py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-red-500/30">
@@ -380,8 +380,8 @@
                     statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-100 text-red-600 font-medium text-sm mb-3 transition-colors';
                     statusDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 recording-indicator';
                     statusText.textContent = '錄影中...';
+                    document.getElementById('pauseIconWrapper').innerHTML = '<i data-lucide="pause" class="w-5 h-5"></i>';
                     pauseText.textContent = '暫停';
-                    pauseBtn.querySelector('i').setAttribute('data-lucide', 'pause');
                     lucide.createIcons();
                     downloadSection.classList.add('hidden');
                     videoPlaceholder.classList.add('hidden');
@@ -394,8 +394,8 @@
                     statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 text-amber-700 font-medium text-sm mb-3 transition-colors';
                     statusDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500';
                     statusText.textContent = '已暫停';
+                    document.getElementById('pauseIconWrapper').innerHTML = '<i data-lucide="play" class="w-5 h-5"></i>';
                     pauseText.textContent = '繼續';
-                    pauseBtn.querySelector('i').setAttribute('data-lucide', 'play');
                     lucide.createIcons();
                     break;
                 case 'finished':
@@ -557,13 +557,18 @@
                     if (isRecording) stopRecording();
                 };
 
-                // 6. 設定 MediaRecorder 並開始錄製
-                const mimeType = MediaRecorder.isTypeSupported('video/webm; codecs=vp9,opus') 
-                               ? 'video/webm; codecs=vp9,opus' 
-                               : 'video/webm'; // 降級使用預設 webm
+                // 6. 設定 MediaRecorder 並優先尋求支援 MP4
+                const mimeTypes = [
+                    'video/mp4',
+                    'video/webm;codecs=h264,aac',
+                    'video/webm;codecs=h264,opus',
+                    'video/webm;codecs=vp9,opus',
+                    'video/webm'
+                ];
+                const selectedMimeType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || 'video/webm';
                                
                 mediaRecorder = new MediaRecorder(mixedStream, { 
-                    mimeType: mimeType,
+                    mimeType: selectedMimeType,
                     videoBitsPerSecond: 5000000 // 5Mbps 高畫質
                 });
 
@@ -626,14 +631,16 @@
         }
 
         function exportVideo() {
-            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            // 強制宣告為 mp4 格式，方便各種播放器識別
+            const blob = new Blob(recordedChunks, { type: 'video/mp4' });
             const url = URL.createObjectURL(blob);
             
             playbackVideo.src = url;
             
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
             downloadLink.href = url;
-            downloadLink.download = `ScreenRecord_Pro_${timestamp}.webm`;
+            // 副檔名強制改為 mp4
+            downloadLink.download = `ScreenRecord_Pro_${timestamp}.mp4`;
         }
 
         // 事件綁定
