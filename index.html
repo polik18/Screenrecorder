@@ -117,7 +117,7 @@
       </span>
       <span class="flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200/60 px-3 py-1.5 rounded-full font-medium">
         <i data-lucide="hard-drive" class="w-4 h-4 text-blue-500"></i>
-        IndexedDB 串流防崩潰快取
+        IndexedDB 磁碟快取防崩潰
       </span>
     </div>
   </header>
@@ -174,7 +174,7 @@
         </div>
 
         <!-- 錄製品質與碼率 -->
-        <div class="mb-5">
+        <div class="mb-4">
           <label class="block text-sm font-medium text-slate-700 mb-1.5">畫質與錄製碼率</label>
           <div class="relative">
             <select id="qualityPreset"
@@ -187,6 +187,30 @@
               <i data-lucide="chevron-down" class="w-4 h-4"></i>
             </div>
           </div>
+        </div>
+
+        <!-- 磁碟空間估算與自動防護面板 -->
+        <div id="diskStorageCard" class="mb-5 p-3.5 bg-slate-50 border border-slate-200 rounded-xl transition-all">
+          <div class="flex items-center justify-between text-xs text-slate-600 mb-1.5">
+            <span class="flex items-center gap-1.5 font-medium text-slate-700">
+              <i data-lucide="hard-drive" class="w-4 h-4 text-blue-600"></i>
+              硬碟剩餘空間
+            </span>
+            <span id="diskStatusTag" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700">
+              檢測中...
+            </span>
+          </div>
+          <div class="flex items-baseline justify-between">
+            <span id="diskFreeSpaceText" class="text-base font-bold text-slate-800 font-mono">-- GB 可用</span>
+            <span id="diskEstTimeText" class="text-xs text-slate-500 font-medium">預估可錄 --</span>
+          </div>
+          <div class="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
+            <div id="diskUsageBar" class="bg-blue-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+          <p id="diskWarningTip" class="text-[11px] text-amber-600 mt-2 hidden flex items-center gap-1">
+            <i data-lucide="alert-circle" class="w-3 h-3"></i>
+            <span>硬碟空間偏低，建議清理後再錄製長篇影音。</span>
+          </p>
         </div>
 
         <!-- 開關選項區塊 -->
@@ -378,7 +402,7 @@
       <div
         class="bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs text-slate-500 max-w-3xl leading-relaxed text-justify">
         <strong class="text-slate-700">隱私與長時穩定性說明：</strong><br>
-        本網頁為 100% 純前端本地端應用程式，採用最新 IndexedDB 磁碟快取串流技術，在您進行數小時長時錄影時，錄影區塊自動寫入瀏覽器沙盒磁碟，<strong>完全不耗盡電腦記憶體 (RAM)</strong>，且支援背景免凍結直通擷取與 WebM 完整進度條修復。所有影音資料 100% 留存於您的本機，絕不上傳任何伺服器。
+        本網頁為 100% 純前端本地端應用程式，採用最新 IndexedDB 磁碟快取串流與智慧空間監測技術，在您進行數小時長時錄影時，錄影區塊自動寫入瀏覽器沙盒磁碟，<strong>完全不耗盡電腦記憶體 (RAM)</strong>，並支援硬碟空間自動防護、背景免凍結直通擷取與 WebM 完整進度條修復。所有影音資料 100% 留存於您的本機，絕不上傳任何伺服器。
       </div>
     </div>
   </footer>
@@ -725,7 +749,6 @@
           const req = store.getAll();
           req.onsuccess = () => {
             const list = req.result || [];
-            // 尋找未標記為 downloaded 的 session 且有資料
             const candidates = list.filter(s => s.chunkCount > 0 && s.status !== 'downloaded');
             if (candidates.length > 0) {
               candidates.sort((a, b) => (b.startTime || 0) - (a.startTime || 0));
@@ -779,7 +802,82 @@
     };
 
     // ------------------------------------------------------------
-    // 3. UI 元素與全域變數
+    // 3. 硬碟儲存空間自動偵測與長時防護管理器 (Disk Space Manager)
+    // ------------------------------------------------------------
+    const DiskSpaceManager = {
+      quota: 0,
+      usage: 0,
+      availableBytes: 0,
+      pollTimer: null,
+      isLowThreshold: 1024 * 1024 * 500, // 500 MB 警示
+      isCriticalThreshold: 1024 * 1024 * 150, // 150 MB 自動安全結束門檻
+
+      async update() {
+        if (navigator.storage && navigator.storage.estimate) {
+          try {
+            const estimate = await navigator.storage.estimate();
+            this.quota = estimate.quota || 0;
+            this.usage = estimate.usage || 0;
+            this.availableBytes = Math.max(0, this.quota - this.usage);
+            return {
+              supported: true,
+              quota: this.quota,
+              usage: this.usage,
+              availableBytes: this.availableBytes
+            };
+          } catch (e) {
+            console.warn('Disk space estimate error:', e);
+          }
+        }
+        return { supported: false };
+      },
+
+      async requestPersistent() {
+        if (navigator.storage && navigator.storage.persist) {
+          try {
+            await navigator.storage.persist();
+          } catch (e) {}
+        }
+      },
+
+      formatEstimate(bitrate) {
+        const bytesPerSecond = (bitrate + 128000) / 8; // video + audio
+        const totalSec = Math.floor(this.availableBytes / bytesPerSecond);
+        const hours = Math.floor(totalSec / 3600);
+        const mins = Math.floor((totalSec % 3600) / 60);
+        if (hours > 0) {
+          return `約 ${hours} 小時 ${mins} 分鐘`;
+        }
+        return `約 ${mins} 分鐘`;
+      },
+
+      startRecordingMonitor(onCritical, onLow) {
+        this.stopRecordingMonitor();
+        // 錄影期間每 10 秒檢查一次硬碟狀態
+        this.pollTimer = setInterval(async () => {
+          const res = await this.update();
+          if (!res.supported) return;
+
+          updateDiskStorageDisplay();
+
+          if (this.availableBytes <= this.isCriticalThreshold) {
+            if (onCritical) onCritical(this.availableBytes);
+          } else if (this.availableBytes <= this.isLowThreshold) {
+            if (onLow) onLow(this.availableBytes);
+          }
+        }, 10000);
+      },
+
+      stopRecordingMonitor() {
+        if (this.pollTimer) {
+          clearInterval(this.pollTimer);
+          this.pollTimer = null;
+        }
+      }
+    };
+
+    // ------------------------------------------------------------
+    // 4. UI 元素與全域變數
     // ------------------------------------------------------------
     const startBtn = document.getElementById('startBtn');
     const recordingControls = document.getElementById('recordingControls');
@@ -792,6 +890,13 @@
     const cameraToggle = document.getElementById('cameraToggle');
     const displaySurfaceMode = document.getElementById('displaySurfaceMode');
     const qualityPreset = document.getElementById('qualityPreset');
+
+    const diskStorageCard = document.getElementById('diskStorageCard');
+    const diskStatusTag = document.getElementById('diskStatusTag');
+    const diskFreeSpaceText = document.getElementById('diskFreeSpaceText');
+    const diskEstTimeText = document.getElementById('diskEstTimeText');
+    const diskUsageBar = document.getElementById('diskUsageBar');
+    const diskWarningTip = document.getElementById('diskWarningTip');
 
     const previewContainer = document.getElementById('previewContainer');
     const previewVideo = document.getElementById('previewVideo');
@@ -843,7 +948,7 @@
     let pendingRecoverySession = null;
 
     // ------------------------------------------------------------
-    // 4. 輔助函式：時間與檔案大小格式化
+    // 5. 輔助函式：時間、容量與硬碟狀態更新
     // ------------------------------------------------------------
     function formatTime(seconds) {
       const h = Math.floor(seconds / 3600);
@@ -861,6 +966,43 @@
       if (bytes < k * k) return (bytes / k).toFixed(1) + ' KB';
       if (bytes < k * k * k) return (bytes / (k * k)).toFixed(1) + ' MB';
       return (bytes / (k * k * k)).toFixed(2) + ' GB';
+    }
+
+    async function updateDiskStorageDisplay() {
+      const info = await DiskSpaceManager.update();
+      if (!info.supported) {
+        diskStatusTag.textContent = '不支援估算';
+        diskFreeSpaceText.textContent = '空間未知';
+        diskEstTimeText.textContent = '依瀏覽器配額';
+        return;
+      }
+
+      const bitrate = parseInt(qualityPreset.value, 10) || 5000000;
+      diskFreeSpaceText.textContent = `${formatBytes(DiskSpaceManager.availableBytes)} 可用`;
+      diskEstTimeText.textContent = `預估可錄 ${DiskSpaceManager.formatEstimate(bitrate)}`;
+
+      const usagePercent = Math.min(100, Math.round((DiskSpaceManager.usage / (DiskSpaceManager.quota || 1)) * 100));
+      diskUsageBar.style.width = `${usagePercent}%`;
+
+      if (DiskSpaceManager.availableBytes <= DiskSpaceManager.isCriticalThreshold) {
+        diskStatusTag.className = 'px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-100 text-red-700';
+        diskStatusTag.textContent = '空間危急 🔴';
+        diskUsageBar.className = 'bg-red-500 h-full rounded-full transition-all duration-500';
+        diskWarningTip.classList.remove('hidden');
+        diskWarningTip.innerHTML = `<i data-lucide="alert-triangle" class="w-3 h-3 text-red-500"></i> <span class="text-red-600 font-medium">硬碟剩餘不足 150MB，即將無法寫入！</span>`;
+      } else if (DiskSpaceManager.availableBytes <= DiskSpaceManager.isLowThreshold) {
+        diskStatusTag.className = 'px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-700';
+        diskStatusTag.textContent = '空間偏低 🟡';
+        diskUsageBar.className = 'bg-amber-500 h-full rounded-full transition-all duration-500';
+        diskWarningTip.classList.remove('hidden');
+        diskWarningTip.innerHTML = `<i data-lucide="alert-circle" class="w-3 h-3 text-amber-500"></i> <span>硬碟空間偏低，建議清理後再錄製長篇影音。</span>`;
+      } else {
+        diskStatusTag.className = 'px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700';
+        diskStatusTag.textContent = '空間充足 🟢';
+        diskUsageBar.className = 'bg-blue-600 h-full rounded-full transition-all duration-500';
+        diskWarningTip.classList.add('hidden');
+      }
+      lucide.createIcons();
     }
 
     function updateTimer() {
@@ -935,7 +1077,7 @@
     }
 
     // ------------------------------------------------------------
-    // 5. 攝影機拖曳視窗邏輯 (Draggable PiP)
+    // 6. 攝影機拖曳視窗邏輯 (Draggable PiP)
     // ------------------------------------------------------------
     let isDragging = false;
     let dragStartX, dragStartY;
@@ -997,9 +1139,7 @@
     }
 
     // ------------------------------------------------------------
-    // 6. 雙模式渲染引擎：
-    //    - 純螢幕模式：硬體直通 Zero-Copy (無 Canvas，不受分頁節流影響)
-    //    - 子母畫面模式：雙驅動 Canvas 合成 (背景自動啟用定時保全，永不凍結)
+    // 7. 雙模式渲染引擎 (純螢幕硬體直通 + 子母畫面定時保全)
     // ------------------------------------------------------------
     function drawCanvasSingleFrame() {
       if (!isRecording) return;
@@ -1010,10 +1150,8 @@
       }
 
       if (canvas.width > 0 && canvas.height > 0) {
-        // 1. 畫底圖 (螢幕)
         ctx.drawImage(previewVideo, 0, 0, canvas.width, canvas.height);
 
-        // 2. 畫上層 (攝影機子母畫面)
         if (cameraToggle.checked && webcamVideo.videoWidth > 0) {
           const parentRect = previewContainer.getBoundingClientRect();
           const camRect = webcamContainer.getBoundingClientRect();
@@ -1056,8 +1194,6 @@
       }
       animationFrameId = requestAnimationFrame(rAfLoop);
 
-      // 當切換到背景或最小化視窗時，瀏覽器會暫停 rAF。
-      // 透過監聽 visibilitychange 與背景計時器，強制以 30 FPS 繼續畫布合成，確保 captureStream 不凍結
       document.addEventListener('visibilitychange', handleVisibilityChange);
       if (document.hidden) {
         startBackgroundFallbackInterval();
@@ -1087,16 +1223,34 @@
     }
 
     // ------------------------------------------------------------
-    // 7. 核心錄影啟動與音訊管線
+    // 8. 核心錄影啟動流程（含硬碟空間預檢與安全守護）
     // ------------------------------------------------------------
     async function startRecording() {
       try {
+        const chosenBitrate = parseInt(qualityPreset.value, 10) || 5000000;
+
+        // 1. 硬碟空間預先檢查 (Storage Pre-check)
+        const storageInfo = await DiskSpaceManager.update();
+        if (storageInfo.supported) {
+          if (DiskSpaceManager.availableBytes < DiskSpaceManager.isCriticalThreshold) {
+            alert(`⚠️ 您的硬碟剩餘空間極度不足（僅剩 ${formatBytes(DiskSpaceManager.availableBytes)}）！\n為了防止錄影中途崩潰並保護資料，請先清理硬碟空間後再開始錄影。`);
+            return;
+          }
+          if (DiskSpaceManager.availableBytes < DiskSpaceManager.isLowThreshold) {
+            const proceed = confirm(`⚠️ 偵測到硬碟可用空間偏低（剩餘 ${formatBytes(DiskSpaceManager.availableBytes)}，預估僅可錄製 ${DiskSpaceManager.formatEstimate(chosenBitrate)}）。\n\n是否仍要繼續錄製？`);
+            if (!proceed) return;
+          }
+        }
+
+        // 請求持久化儲存權限
+        await DiskSpaceManager.requestPersistent();
+
         currentSessionId = 'rec_' + Date.now();
         currentChunkIndex = 0;
         currentRecordingBytes = 0;
         isRecording = true;
 
-        // 1. 獲取螢幕畫面
+        // 2. 獲取螢幕畫面
         const displayMediaOptions = {
           video: {
             displaySurface: displaySurfaceMode.value,
@@ -1107,7 +1261,7 @@
         screenStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
         previewVideo.srcObject = screenStream;
 
-        // 2. 獲取攝影機 (如果開啟)
+        // 3. 獲取攝影機 (如果開啟)
         if (cameraToggle.checked) {
           try {
             cameraStream = await navigator.mediaDevices.getUserMedia({
@@ -1128,7 +1282,7 @@
           webcamContainer.style.display = 'none';
         }
 
-        // 3. 獲取麥克風音訊 (如果開啟)
+        // 4. 獲取麥克風音訊 (如果開啟)
         if (micToggle.checked) {
           try {
             micStream = await navigator.mediaDevices.getUserMedia({
@@ -1144,14 +1298,13 @@
           }
         }
 
-        // 4. 智能音訊軌處理
+        // 5. 智能音訊軌處理
         const screenAudioTracks = sysAudioToggle.checked ? screenStream.getAudioTracks() : [];
         const micAudioTracks = (micToggle.checked && micStream) ? micStream.getAudioTracks() : [];
 
         let finalAudioTrack = null;
 
         if (screenAudioTracks.length > 0 && micAudioTracks.length > 0) {
-          // 雙軌混音：使用 Web Audio API
           audioContext = new (window.AudioContext || window.webkitAudioContext)();
           if (audioContext.state === 'suspended') {
             await audioContext.resume().catch(e => console.warn('AudioContext resume warn:', e));
@@ -1164,7 +1317,6 @@
           sysSource.connect(audioDestination);
           micSource.connect(audioDestination);
 
-          // 防止背景電源管理掛起
           audioContext.onstatechange = () => {
             if (audioContext.state === 'suspended' && isRecording && !isPaused) {
               audioContext.resume().catch(() => {});
@@ -1173,18 +1325,15 @@
 
           finalAudioTrack = audioDestination.stream.getAudioTracks()[0];
         } else if (screenAudioTracks.length > 0) {
-          // 單音源直通 (系統聲音)
           finalAudioTrack = screenAudioTracks[0];
         } else if (micAudioTracks.length > 0) {
-          // 單音源直通 (麥克風)
           finalAudioTrack = micAudioTracks[0];
         }
 
-        // 5. 影像軌選擇：純螢幕直通 vs 子母畫面合成
+        // 6. 影像軌選擇：純螢幕直通 vs 子母畫面合成
         let finalVideoTrack = null;
 
         if (cameraToggle.checked) {
-          // 需合成：等待視頻元數據就緒
           await new Promise(resolve => {
             if (previewVideo.readyState >= 1) resolve();
             else previewVideo.onloadedmetadata = () => resolve();
@@ -1193,23 +1342,20 @@
           const canvasStream = canvas.captureStream(30);
           finalVideoTrack = canvasStream.getVideoTracks()[0];
         } else {
-          // 純螢幕直通：100% 免 Canvas 負擔，完全免疫背景分頁節流！
           finalVideoTrack = screenStream.getVideoTracks()[0];
         }
 
-        // 組合最終錄製 Stream
         const tracksToRecord = [finalVideoTrack];
         if (finalAudioTrack) {
           tracksToRecord.push(finalAudioTrack);
         }
         mixedStream = new MediaStream(tracksToRecord);
 
-        // 使用者點擊瀏覽器原生「停止共用」按鈕時安全觸發結束
         screenStream.getVideoTracks()[0].onended = () => {
           if (isRecording) stopRecording();
         };
 
-        // 6. 選擇最優 Codec 與設定 MediaRecorder
+        // 7. 選擇最優 Codec 與設定 MediaRecorder
         const mimeTypes = [
           'video/webm;codecs=vp9,opus',
           'video/webm;codecs=vp8,opus',
@@ -1220,17 +1366,13 @@
         const selectedMimeType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || 'video/webm';
         recordingMimeType = selectedMimeType;
 
-        const chosenBitrate = parseInt(qualityPreset.value, 10) || 5000000;
-
         mediaRecorder = new MediaRecorder(mixedStream, {
           mimeType: selectedMimeType,
           videoBitsPerSecond: chosenBitrate
         });
 
-        // 初始化 IndexedDB 本次錄影 Session
         await RecordingDB.createSession(currentSessionId, selectedMimeType);
 
-        // 每 1 秒產出一個 Chunk 並直接串流寫入 IndexedDB 磁碟快取
         mediaRecorder.ondataavailable = async function (e) {
           if (e.data && e.data.size > 0) {
             currentChunkIndex++;
@@ -1246,13 +1388,26 @@
 
         mediaRecorder.onstop = finalizeAndExportRecording;
 
-        // 啟動錄影（每 1000ms 分割一次 chunk）
         mediaRecorder.start(1000);
         isPaused = false;
 
         totalRecordedTime = 0;
         lastResumeTime = Date.now();
         timerInterval = setInterval(updateTimer, 500);
+
+        // 啟動錄影中途硬碟即時輪詢與主動守護
+        DiskSpaceManager.startRecordingMonitor(
+          (bytesLeft) => {
+            // 空間危急：自動安全結束並保存，防止資料毀損
+            alert(`🚨 警告：本機硬碟空間即將耗盡（剩餘不足 ${formatBytes(bytesLeft)}）！\n系統已自動為您安全停止並保存目前的錄影，請儘速下載保存。`);
+            stopRecording();
+          },
+          (bytesLeft) => {
+            // 空間偏低提醒
+            statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 text-amber-800 font-medium text-xs mb-2 transition-colors';
+            statusText.textContent = `錄影中 (硬碟剩餘 ${formatBytes(bytesLeft)})`;
+          }
+        );
 
         setUIState('recording');
 
@@ -1273,9 +1428,10 @@
     }
 
     // ------------------------------------------------------------
-    // 8. 結束錄影、時間軸修復與匯出打包
+    // 9. 結束錄影、時間軸修復與匯出打包
     // ------------------------------------------------------------
     function stopMediaTracks() {
+      DiskSpaceManager.stopRecordingMonitor();
       if (screenStream) screenStream.getTracks().forEach(t => t.stop());
       if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
       if (micStream) micStream.getTracks().forEach(t => t.stop());
@@ -1323,7 +1479,6 @@
 
     async function finalizeAndExportRecording() {
       try {
-        // 1. 從 IndexedDB 依序拉取所有區塊
         const chunks = await RecordingDB.getChunks(currentSessionId);
         if (!chunks || chunks.length === 0) {
           throw new Error("未取得任何錄影資料區塊。");
@@ -1332,7 +1487,6 @@
         const mimeType = recordingMimeType;
         const rawBlob = new Blob(chunks, { type: mimeType });
 
-        // 2. 若為 WebM 格式，注入 EBML Duration 標頭以支援時間軸 Seeking
         let finalBlob = rawBlob;
         if (mimeType.includes('webm')) {
           try {
@@ -1343,7 +1497,6 @@
           }
         }
 
-        // 3. 建立 Object URL 並更新播放器與下載連結
         const url = URL.createObjectURL(finalBlob);
         playbackVideo.src = url;
 
@@ -1352,13 +1505,12 @@
         downloadLink.href = url;
         downloadLink.download = `ScreenRecord_Pro_${timestamp}.${ext}`;
 
-        // 4. 更新結果摘要
         const durFormatted = formatTime(Math.round(totalRecordedTime / 1000));
         const sizeFormatted = formatBytes(finalBlob.size);
         downloadSummaryText.innerHTML = `總時長：<strong class="text-slate-700">${durFormatted}</strong> ‧ 檔案大小：<strong class="text-slate-700">${sizeFormatted}</strong> ‧ 格式：<strong class="text-slate-700">${ext.toUpperCase()}</strong> (已修復時間軸拖曳標頭)`;
 
-        // 5. 更新 IndexedDB 為已完成
         await RecordingDB.completeSession(currentSessionId, totalRecordedTime, finalBlob.size);
+        updateDiskStorageDisplay(); // 匯出後重新估算磁碟空間
 
         setUIState('finished');
       } catch (err) {
@@ -1369,7 +1521,7 @@
     }
 
     // ------------------------------------------------------------
-    // 9. 崩潰/斷線復原邏輯
+    // 10. 崩潰/斷線復原邏輯
     // ------------------------------------------------------------
     async function checkPendingRecovery() {
       try {
@@ -1415,6 +1567,7 @@
         await RecordingDB.markDownloaded(pendingRecoverySession.id);
         recoveryBanner.classList.add('hidden');
         pendingRecoverySession = null;
+        updateDiskStorageDisplay();
         alert('錄影檔案已成功復原並開始下載！');
       } catch (err) {
         alert('復原失敗: ' + err.message);
@@ -1431,15 +1584,20 @@
         await RecordingDB.clearSession(pendingRecoverySession.id);
         recoveryBanner.classList.add('hidden');
         pendingRecoverySession = null;
+        updateDiskStorageDisplay();
       }
     });
 
     // ------------------------------------------------------------
-    // 10. 事件綁定與初始化
+    // 11. 事件綁定與初始化
     // ------------------------------------------------------------
     startBtn.addEventListener('click', startRecording);
     pauseBtn.addEventListener('click', togglePause);
     stopBtn.addEventListener('click', stopRecording);
+
+    qualityPreset.addEventListener('change', () => {
+      updateDiskStorageDisplay();
+    });
 
     newRecordBtn.addEventListener('click', () => {
       playbackVideo.src = "";
@@ -1453,6 +1611,7 @@
       setUIState('ready');
       videoPlaceholder.classList.remove('hidden');
       playbackVideo.classList.add('hidden');
+      updateDiskStorageDisplay();
     });
 
     // 檢查瀏覽器 getDisplayMedia 支援
@@ -1465,9 +1624,10 @@
       lucide.createIcons();
     }
 
-    // 頁面載入時檢查是否有可復原的錄影
-    window.addEventListener('DOMContentLoaded', () => {
-      checkPendingRecovery();
+    // 頁面載入時初始化硬碟空間監測與未下載復原
+    window.addEventListener('DOMContentLoaded', async () => {
+      await updateDiskStorageDisplay();
+      await checkPendingRecovery();
     });
   </script>
 </body>
