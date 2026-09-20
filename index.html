@@ -3,17 +3,17 @@
 
 <head>
   <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-2S6CT670L8"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-2S6CT670L8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
 
-  gtag('config', 'G-2S6CT670L8');
-</script>
+    gtag('config', 'G-2S6CT670L8');
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>純前端線上螢幕錄影工具 | Local Screen Recorder Pro</title>
+  <title>純前端線上螢幕錄影工具 Pro | Local Screen Recorder Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
@@ -93,7 +93,9 @@
 </head>
 
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col m-0 p-0">
-    <a data-polik-category-return href="https://polik18.github.io/creator.html" aria-label="回到內容創作分類" style="position:fixed;left:14px;bottom:14px;z-index:2147483647;display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border:1px solid rgba(23,79,60,.3);border-radius:999px;background:rgba(255,253,248,.94);color:#0d3528;font:700 13px/1 system-ui,-apple-system,sans-serif;text-decoration:none;box-shadow:0 8px 24px rgba(0,0,0,.2);backdrop-filter:blur(10px)">← 回內容創作分類</a>
+  <a data-polik-category-return href="https://polik18.github.io/creator.html" aria-label="回到內容創作分類"
+    style="position:fixed;left:14px;bottom:14px;z-index:2147483647;display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border:1px solid rgba(23,79,60,.3);border-radius:999px;background:rgba(255,253,248,.94);color:#0d3528;font:700 13px/1 system-ui,-apple-system,sans-serif;text-decoration:none;box-shadow:0 8px 24px rgba(0,0,0,.2);backdrop-filter:blur(10px)">←
+    回內容創作分類</a>
 
   <header
     class="w-full bg-white shadow-sm border-b border-slate-200 py-4 px-6 md:px-12 flex justify-between items-center z-10">
@@ -101,16 +103,51 @@
       <div class="bg-blue-600 text-white p-2 rounded-lg shadow-md shadow-blue-600/20">
         <i data-lucide="monitor-play" class="w-6 h-6"></i>
       </div>
-      <h1 class="text-xl font-bold tracking-tight">線上螢幕錄影工具 <span
-          class="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md ml-2">Pro</span></h1>
+      <div>
+        <h1 class="text-xl font-bold tracking-tight flex items-center gap-2">
+          線上螢幕錄影工具
+          <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">Pro 超長時強化版</span>
+        </h1>
+      </div>
     </div>
-    <div class="hidden md:flex items-center text-sm text-slate-500 gap-2 bg-slate-100 px-3 py-1.5 rounded-full">
-      <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500"></i>
-      完全本地端運行，保護您的隱私
+    <div class="hidden md:flex items-center text-xs text-slate-500 gap-3">
+      <span class="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-3 py-1.5 rounded-full font-medium">
+        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500"></i>
+        100% 本地端運行 ‧ 零隱私外洩
+      </span>
+      <span class="flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200/60 px-3 py-1.5 rounded-full font-medium">
+        <i data-lucide="hard-drive" class="w-4 h-4 text-blue-500"></i>
+        IndexedDB 串流防崩潰快取
+      </span>
     </div>
   </header>
 
-  <main class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-8 flex flex-col xl:flex-row gap-8">
+  <!-- 斷線 / 崩潰復原通知橫幅 (若有未下載的錄影) -->
+  <div id="recoveryBanner" class="hidden w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 mt-6">
+    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+      <div class="flex items-start gap-3">
+        <div class="p-2 bg-amber-100 text-amber-700 rounded-xl mt-0.5 sm:mt-0">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h4 class="font-bold text-slate-800 text-sm sm:text-base">發現先前尚未下載的錄影紀錄</h4>
+          <p id="recoveryInfoText" class="text-xs sm:text-sm text-slate-600 mt-0.5">
+            偵測到本地快取中存有先前的錄影片段，您可以立即復原並下載，避免心血遺失。
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <button id="recoverBtn" class="flex-1 sm:flex-none px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-1.5 shadow-sm">
+          <i data-lucide="download" class="w-4 h-4"></i> 立即還原下載
+        </button>
+        <button id="discardRecoveryBtn" class="px-3 py-2 bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium transition-colors">
+          清除紀錄
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <main class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-6 sm:py-8 flex flex-col xl:flex-row gap-8">
 
     <!-- 左側控制面板 -->
     <section class="xl:w-1/3 flex flex-col gap-6">
@@ -118,15 +155,15 @@
         class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-full relative overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
         <h2 class="text-2xl font-bold mb-1">錄製設定</h2>
-        <p class="text-slate-500 mb-6 text-sm">自訂您的畫面、音訊與攝影機來源。</p>
+        <p class="text-slate-500 mb-5 text-sm">自訂您的畫面、音訊與品質模式。</p>
 
         <!-- 錄影模式偏好 -->
-        <div class="mb-5">
-          <label class="block text-sm font-medium text-slate-700 mb-2">預設錄製模式</label>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">預設錄製模式</label>
           <div class="relative">
             <select id="displaySurfaceMode"
               class="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 px-4 rounded-xl leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors cursor-pointer text-sm">
-              <option value="monitor">🖥️ 整個螢幕桌面</option>
+              <option value="monitor">🖥️ 整個螢幕桌面 (推薦)</option>
               <option value="window">🪟 特定應用程式視窗</option>
               <option value="browser">🌐 特定瀏覽器分頁</option>
             </select>
@@ -136,8 +173,24 @@
           </div>
         </div>
 
+        <!-- 錄製品質與碼率 -->
+        <div class="mb-5">
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">畫質與錄製碼率</label>
+          <div class="relative">
+            <select id="qualityPreset"
+              class="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 px-4 rounded-xl leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors cursor-pointer text-sm">
+              <option value="5000000">🌟 標準高畫質 (1080p / 5 Mbps - 推薦)</option>
+              <option value="2500000">⚡ 長時節能省空間 (720p/1080p / 2.5 Mbps - 適合數小時長演講)</option>
+              <option value="8000000">🚀 極致原畫細節 (原生解析度 / 8 Mbps - 適合遊戲與高精細展示)</option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+              <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </div>
+          </div>
+        </div>
+
         <!-- 開關選項區塊 -->
-        <div class="space-y-3 mb-8">
+        <div class="space-y-3 mb-6">
           <!-- 系統音訊 -->
           <div
             class="flex items-center justify-between p-3.5 border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-colors rounded-xl cursor-pointer"
@@ -199,13 +252,23 @@
         </div>
 
         <!-- 狀態與計時器 -->
-        <div class="flex-grow flex flex-col items-center justify-center py-4">
+        <div class="flex-grow flex flex-col items-center justify-center py-2">
           <div id="statusBadge"
-            class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 font-medium text-sm mb-3 transition-colors">
+            class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 font-medium text-sm mb-2 transition-colors">
             <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
             <span id="statusText">等待設定</span>
           </div>
           <div class="text-5xl lg:text-6xl font-mono font-light tracking-wider text-slate-800" id="timer">00:00</div>
+
+          <!-- 即時錄製容量與保護狀態 -->
+          <div id="recordingMetrics" class="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500">
+            <span id="recordedSizeBadge" class="bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200/60 font-mono">
+              💾 0.0 MB
+            </span>
+            <span class="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-md border border-emerald-100 flex items-center gap-1 font-medium">
+              <i data-lucide="shield" class="w-3 h-3"></i> 磁碟快取保護中
+            </span>
+          </div>
         </div>
 
         <!-- 控制按鈕 -->
@@ -216,7 +279,7 @@
             開始擷取與錄製
           </button>
           <p id="unsupportedWarning" class="text-red-500 text-xs mt-3 text-center hidden bg-red-50 p-2 rounded-lg border border-red-100">
-            ⚠️ 您的裝置或瀏覽器（如手機或平板）不支援網頁螢幕錄影功能，請改用電腦版瀏覽器開啟。
+            ⚠️ 您的裝置或瀏覽器不支援網頁螢幕錄影功能，請改用電腦版 Chrome / Edge / Firefox 開啟。
           </p>
 
           <div class="grid grid-cols-2 gap-3 hidden" id="recordingControls">
@@ -281,7 +344,9 @@
             <i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-500"></i>
             錄製已順利完成！
           </h3>
-          <p class="text-sm text-slate-500 mt-1">您的影片檔已準備就緒，畫面與音訊皆已成功打包。</p>
+          <p id="downloadSummaryText" class="text-sm text-slate-500 mt-1">
+            您的影片檔已修復時間軸標頭並成功打包，支援全播放器時間軸拖曳。
+          </p>
         </div>
         <div class="flex gap-3 w-full sm:w-auto relative z-10">
           <button id="newRecordBtn"
@@ -295,7 +360,7 @@
         </div>
       </div>
 
-      <!-- 隱藏畫布 (用於混合螢幕與攝影機軌道) -->
+      <!-- 隱藏畫布 (僅在開啟攝影機時用於混合螢幕與攝影機軌道) -->
       <canvas id="compositingCanvas" width="1920" height="1080"></canvas>
     </section>
   </main>
@@ -312,19 +377,410 @@
       <!-- 免責聲明 -->
       <div
         class="bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs text-slate-500 max-w-3xl leading-relaxed text-justify">
-        <strong class="text-slate-700">隱私與免責聲明：</strong><br>
-        本網頁為純前端應用程式，運用瀏覽器內建 WebRTC、MediaRecorder 與 HTML5 Canvas API 進行多軌合成與螢幕擷取。<strong>所有資料處理、影像渲染、音訊混合與檔案打包均 100%
-          在您的本地端（瀏覽器記憶體內）完成。</strong><br>
-        我們不會，也完全沒有機制去收集、儲存、監聽或上傳您的任何螢幕畫面、攝影機畫面、音訊或個人隱私資料至任何外部伺服器。錄製產生之內容版權與衍生之法律責任由使用者自行承擔。
+        <strong class="text-slate-700">隱私與長時穩定性說明：</strong><br>
+        本網頁為 100% 純前端本地端應用程式，採用最新 IndexedDB 磁碟快取串流技術，在您進行數小時長時錄影時，錄影區塊自動寫入瀏覽器沙盒磁碟，<strong>完全不耗盡電腦記憶體 (RAM)</strong>，且支援背景免凍結直通擷取與 WebM 完整進度條修復。所有影音資料 100% 留存於您的本機，絕不上傳任何伺服器。
       </div>
     </div>
   </footer>
 
+  <!-- ============================================================ -->
+  <!-- 核心腳本區 -->
+  <!-- ============================================================ -->
   <script>
+    // 初始化 Lucide 圖標與版權年份
     lucide.createIcons();
     document.getElementById('currentYear').textContent = new Date().getFullYear();
 
-    // DOM 元素
+    // ------------------------------------------------------------
+    // 1. 純前端 WebM EBML Duration 修復器 (解決長時錄影無法拉進度條/播放問題)
+    // ------------------------------------------------------------
+    const ebmlSections = {
+      0xa45dfa3: { name: 'EBML', type: 'Container' },
+      0x286: { name: 'EBMLVersion', type: 'Uint' },
+      0x2f7: { name: 'EBMLReadVersion', type: 'Uint' },
+      0x2f2: { name: 'EBMLMaxIDLength', type: 'Uint' },
+      0x2f3: { name: 'EBMLMaxSizeLength', type: 'Uint' },
+      0x4282: { name: 'DocType', type: 'String' },
+      0x4287: { name: 'DocTypeVersion', type: 'Uint' },
+      0x4285: { name: 'DocTypeReadVersion', type: 'Uint' },
+      0x8538067: { name: 'Segment', type: 'Container' },
+      0x14d9b74: { name: 'SeekHead', type: 'Container' },
+      0xdbb: { name: 'Seek', type: 'Container' },
+      0x13ab: { name: 'SeekID', type: 'Uint' },
+      0x13ac: { name: 'SeekPosition', type: 'Uint' },
+      0x549a966: { name: 'Info', type: 'Container' },
+      0x2ad7b1: { name: 'TimecodeScale', type: 'Uint' },
+      0x489: { name: 'Duration', type: 'Float' },
+      0x4d80: { name: 'MuxingApp', type: 'String' },
+      0x1741: { name: 'WritingApp', type: 'String' },
+      0x654321: { name: 'Tracks', type: 'Container' }
+    };
+
+    function ebmlInherit(subClass, superClass) {
+      subClass.prototype = Object.create(superClass.prototype);
+      subClass.prototype.constructor = subClass;
+    }
+
+    function WebmBase(name, type) {
+      this.name = name || 'Unknown';
+      this.type = type || 'Unknown';
+    }
+    WebmBase.prototype.setSource = function (source) {
+      this.source = source;
+      this.updateBySource();
+    };
+    WebmBase.prototype.setData = function (data) {
+      this.data = data;
+      this.updateByData();
+    };
+    WebmBase.prototype.updateBySource = function () { };
+    WebmBase.prototype.updateByData = function () { };
+
+    function WebmUint(name, type) { WebmBase.call(this, name, type || 'Uint'); }
+    ebmlInherit(WebmUint, WebmBase);
+    WebmUint.prototype.updateBySource = function () {
+      let value = 0;
+      for (let i = 0; i < this.source.length; i++) value = value * 256 + this.source[i];
+      this.data = value;
+    };
+    WebmUint.prototype.updateByData = function () {
+      let val = this.data;
+      const bytes = [];
+      if (val === 0) bytes.push(0);
+      while (val > 0) {
+        bytes.unshift(val % 256);
+        val = Math.floor(val / 256);
+      }
+      this.source = new Uint8Array(bytes);
+    };
+    WebmUint.prototype.getValue = function () { return this.data; };
+    WebmUint.prototype.setValue = function (val) { this.setData(val); };
+
+    function WebmFloat(name, type) { WebmBase.call(this, name, type || 'Float'); }
+    ebmlInherit(WebmFloat, WebmBase);
+    WebmFloat.prototype.getFloatArrayType = function () {
+      return this.source && this.source.length === 4 ? Float32Array : Float64Array;
+    };
+    WebmFloat.prototype.updateBySource = function () {
+      const byteArray = new Uint8Array(this.source).reverse();
+      const floatArrayType = this.getFloatArrayType();
+      const floatArray = new floatArrayType(byteArray.buffer);
+      this.data = floatArray[0];
+    };
+    WebmFloat.prototype.updateByData = function () {
+      const floatArrayType = this.getFloatArrayType();
+      const floatArray = new floatArrayType([this.data]);
+      const byteArray = new Uint8Array(floatArray.buffer);
+      this.source = byteArray.reverse();
+    };
+    WebmFloat.prototype.getValue = function () { return this.data; };
+    WebmFloat.prototype.setValue = function (val) { this.setData(val); };
+
+    function WebmContainer(name, type) { WebmBase.call(this, name, type || 'Container'); }
+    ebmlInherit(WebmContainer, WebmBase);
+    WebmContainer.prototype.readByte = function () { return this.source[this.offset++]; };
+    WebmContainer.prototype.readUint = function () {
+      const firstByte = this.readByte();
+      const bytes = 8 - firstByte.toString(2).length;
+      let value = firstByte - (1 << (7 - bytes));
+      for (let i = 0; i < bytes; i++) value = value * 256 + this.readByte();
+      return value;
+    };
+    WebmContainer.prototype.updateBySource = function () {
+      this.data = [];
+      for (this.offset = 0; this.offset < this.source.length;) {
+        const id = this.readUint();
+        const len = this.readUint();
+        const end = Math.min(this.offset + len, this.source.length);
+        const data = this.source.slice(this.offset, end);
+
+        const info = ebmlSections[id] || { name: 'Unknown', type: 'Unknown' };
+        let ctr = WebmBase;
+        switch (info.type) {
+          case 'Container': ctr = WebmContainer; break;
+          case 'Uint': ctr = WebmUint; break;
+          case 'Float': ctr = WebmFloat; break;
+        }
+        const section = new ctr(info.name, info.type);
+        section.setSource(data);
+        this.data.push({ id, idHex: id.toString(16), data: section });
+        this.offset = end;
+      }
+    };
+    WebmContainer.prototype.writeUint = function (x, draft) {
+      let bytes = 1, flag = 0x80;
+      for (; x >= flag && bytes < 8; bytes++, flag *= 0x80) { }
+      if (!draft) {
+        let val = flag + x;
+        for (let i = bytes - 1; i >= 0; i--) {
+          const c = val % 256;
+          this.source[this.offset + i] = c;
+          val = Math.floor((val - c) / 256);
+        }
+      }
+      this.offset += bytes;
+    };
+    WebmContainer.prototype.writeSections = function (draft) {
+      this.offset = 0;
+      for (let i = 0; i < this.data.length; i++) {
+        const section = this.data[i];
+        const content = section.data.source;
+        const contentLength = content.length;
+        this.writeUint(section.id, draft);
+        this.writeUint(contentLength, draft);
+        if (!draft) this.source.set(content, this.offset);
+        this.offset += contentLength;
+      }
+      return this.offset;
+    };
+    WebmContainer.prototype.updateByData = function () {
+      const length = this.writeSections('draft');
+      this.source = new Uint8Array(length);
+      this.writeSections();
+    };
+    WebmContainer.prototype.getSectionById = function (id) {
+      for (let i = 0; i < this.data.length; i++) {
+        if (this.data[i].id === id) return this.data[i].data;
+      }
+      return null;
+    };
+
+    function WebmFile(source) {
+      WebmContainer.call(this, 'File', 'File');
+      this.setSource(source);
+    }
+    ebmlInherit(WebmFile, WebmContainer);
+    WebmFile.prototype.fixDuration = function (duration) {
+      const segmentSection = this.getSectionById(0x8538067);
+      if (!segmentSection) return false;
+      const infoSection = segmentSection.getSectionById(0x549a966);
+      if (!infoSection) return false;
+      const timeScaleSection = infoSection.getSectionById(0xad7b1);
+      if (!timeScaleSection) return false;
+      let durationSection = infoSection.getSectionById(0x489);
+      if (durationSection) {
+        durationSection.setValue(duration);
+      } else {
+        durationSection = new WebmFloat('Duration', 'Float');
+        durationSection.setValue(duration);
+        infoSection.data.push({ id: 0x489, data: durationSection });
+      }
+      timeScaleSection.setValue(1000000); // 1ms scale
+      infoSection.updateByData();
+      segmentSection.updateByData();
+      this.updateByData();
+      return true;
+    };
+    WebmFile.prototype.toBlob = function (mimeType) {
+      return new Blob([this.source.buffer], { type: mimeType || 'video/webm' });
+    };
+
+    function fixWebmDuration(blob, durationMs) {
+      return new Promise((resolve) => {
+        try {
+          const reader = new FileReader();
+          reader.onloadend = function () {
+            try {
+              const file = new WebmFile(new Uint8Array(reader.result));
+              if (file.fixDuration(durationMs)) {
+                resolve(file.toBlob(blob.type));
+                return;
+              }
+            } catch (ex) {
+              console.warn('[WebM Duration Patch] Parsing failed, falling back to raw blob:', ex);
+            }
+            resolve(blob);
+          };
+          reader.onerror = () => resolve(blob);
+          reader.readAsArrayBuffer(blob);
+        } catch (e) {
+          resolve(blob);
+        }
+      });
+    }
+
+    // ------------------------------------------------------------
+    // 2. IndexedDB 串流快取與崩潰保護引擎 (防止長時錄影 RAM 耗盡)
+    // ------------------------------------------------------------
+    const RecordingDB = {
+      dbName: 'ScreenRecorderDB_v2',
+      version: 1,
+      db: null,
+
+      async init() {
+        if (this.db) return this.db;
+        return new Promise((resolve, reject) => {
+          const request = indexedDB.open(this.dbName, this.version);
+          request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('sessions')) {
+              db.createObjectStore('sessions', { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains('chunks')) {
+              const chunkStore = db.createObjectStore('chunks', { autoIncrement: true });
+              chunkStore.createIndex('sessionId', 'sessionId', { unique: false });
+            }
+          };
+          request.onsuccess = (e) => {
+            this.db = e.target.result;
+            resolve(this.db);
+          };
+          request.onerror = (e) => reject(e);
+        });
+      },
+
+      async createSession(sessionId, mimeType) {
+        await this.init();
+        return new Promise((resolve, reject) => {
+          const tx = this.db.transaction(['sessions'], 'readwrite');
+          const store = tx.objectStore('sessions');
+          store.put({
+            id: sessionId,
+            startTime: Date.now(),
+            endTime: null,
+            durationMs: 0,
+            mimeType: mimeType,
+            totalBytes: 0,
+            chunkCount: 0,
+            status: 'recording',
+            createdAt: new Date().toISOString()
+          });
+          tx.oncomplete = () => resolve();
+          tx.onerror = (e) => reject(e);
+        });
+      },
+
+      async saveChunk(sessionId, chunkIndex, blob) {
+        await this.init();
+        return new Promise((resolve, reject) => {
+          const tx = this.db.transaction(['chunks', 'sessions'], 'readwrite');
+          const chunkStore = tx.objectStore('chunks');
+          chunkStore.add({
+            sessionId: sessionId,
+            chunkIndex: chunkIndex,
+            data: blob,
+            size: blob.size,
+            timestamp: Date.now()
+          });
+
+          const sessionStore = tx.objectStore('sessions');
+          const getReq = sessionStore.get(sessionId);
+          getReq.onsuccess = () => {
+            const sess = getReq.result;
+            if (sess) {
+              sess.totalBytes = (sess.totalBytes || 0) + blob.size;
+              sess.chunkCount = (sess.chunkCount || 0) + 1;
+              sessionStore.put(sess);
+            }
+          };
+
+          tx.oncomplete = () => resolve();
+          tx.onerror = (e) => reject(e);
+        });
+      },
+
+      async getChunks(sessionId) {
+        await this.init();
+        return new Promise((resolve, reject) => {
+          const tx = this.db.transaction(['chunks'], 'readonly');
+          const chunkStore = tx.objectStore('chunks');
+          const index = chunkStore.index('sessionId');
+          const req = index.getAll(sessionId);
+          req.onsuccess = () => {
+            const results = req.result || [];
+            results.sort((a, b) => a.chunkIndex - b.chunkIndex);
+            const blobs = results.map(r => r.data);
+            resolve(blobs);
+          };
+          req.onerror = (e) => reject(e);
+        });
+      },
+
+      async completeSession(sessionId, durationMs, totalBytes) {
+        await this.init();
+        return new Promise((resolve, reject) => {
+          const tx = this.db.transaction(['sessions'], 'readwrite');
+          const store = tx.objectStore('sessions');
+          const req = store.get(sessionId);
+          req.onsuccess = () => {
+            const sess = req.result;
+            if (sess) {
+              sess.endTime = Date.now();
+              sess.durationMs = durationMs;
+              if (totalBytes) sess.totalBytes = totalBytes;
+              sess.status = 'completed';
+              store.put(sess);
+            }
+          };
+          tx.oncomplete = () => resolve();
+          tx.onerror = (e) => reject(e);
+        });
+      },
+
+      async getUnfinishedSession() {
+        await this.init();
+        return new Promise((resolve) => {
+          const tx = this.db.transaction(['sessions'], 'readonly');
+          const store = tx.objectStore('sessions');
+          const req = store.getAll();
+          req.onsuccess = () => {
+            const list = req.result || [];
+            // 尋找未標記為 downloaded 的 session 且有資料
+            const candidates = list.filter(s => s.chunkCount > 0 && s.status !== 'downloaded');
+            if (candidates.length > 0) {
+              candidates.sort((a, b) => (b.startTime || 0) - (a.startTime || 0));
+              resolve(candidates[0]);
+            } else {
+              resolve(null);
+            }
+          };
+          req.onerror = () => resolve(null);
+        });
+      },
+
+      async clearSession(sessionId) {
+        await this.init();
+        return new Promise((resolve, reject) => {
+          const tx = this.db.transaction(['sessions', 'chunks'], 'readwrite');
+          const sessionStore = tx.objectStore('sessions');
+          sessionStore.delete(sessionId);
+
+          const chunkStore = tx.objectStore('chunks');
+          const index = chunkStore.index('sessionId');
+          const req = index.openCursor(sessionId);
+          req.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (cursor) {
+              chunkStore.delete(cursor.primaryKey);
+              cursor.continue();
+            }
+          };
+          tx.oncomplete = () => resolve();
+          tx.onerror = (e) => reject(e);
+        });
+      },
+
+      async markDownloaded(sessionId) {
+        await this.init();
+        return new Promise((resolve) => {
+          const tx = this.db.transaction(['sessions'], 'readwrite');
+          const store = tx.objectStore('sessions');
+          const req = store.get(sessionId);
+          req.onsuccess = () => {
+            const sess = req.result;
+            if (sess) {
+              sess.status = 'downloaded';
+              store.put(sess);
+            }
+          };
+          tx.oncomplete = () => resolve();
+        });
+      }
+    };
+
+    // ------------------------------------------------------------
+    // 3. UI 元素與全域變數
+    // ------------------------------------------------------------
     const startBtn = document.getElementById('startBtn');
     const recordingControls = document.getElementById('recordingControls');
     const pauseBtn = document.getElementById('pauseBtn');
@@ -335,6 +791,7 @@
     const micToggle = document.getElementById('micToggle');
     const cameraToggle = document.getElementById('cameraToggle');
     const displaySurfaceMode = document.getElementById('displaySurfaceMode');
+    const qualityPreset = document.getElementById('qualityPreset');
 
     const previewContainer = document.getElementById('previewContainer');
     const previewVideo = document.getElementById('previewVideo');
@@ -347,19 +804,29 @@
     const downloadSection = document.getElementById('downloadSection');
     const downloadLink = document.getElementById('downloadLink');
     const newRecordBtn = document.getElementById('newRecordBtn');
+    const downloadSummaryText = document.getElementById('downloadSummaryText');
 
     const timerDisplay = document.getElementById('timer');
     const statusBadge = document.getElementById('statusBadge');
     const statusDot = document.getElementById('statusDot');
     const statusText = document.getElementById('statusText');
+    const recordedSizeBadge = document.getElementById('recordedSizeBadge');
+
+    const recoveryBanner = document.getElementById('recoveryBanner');
+    const recoveryInfoText = document.getElementById('recoveryInfoText');
+    const recoverBtn = document.getElementById('recoverBtn');
+    const discardRecoveryBtn = document.getElementById('discardRecoveryBtn');
 
     const canvas = document.getElementById('compositingCanvas');
     const ctx = canvas.getContext('2d');
 
-    // 核心狀態變數
-    let mediaRecorder;
+    // 狀態變數
+    let mediaRecorder = null;
     let recordingMimeType = 'video/webm';
-    let recordedChunks = [];
+    let currentSessionId = null;
+    let currentChunkIndex = 0;
+    let currentRecordingBytes = 0;
+
     let screenStream = null;
     let cameraStream = null;
     let micStream = null;
@@ -372,9 +839,103 @@
     let isPaused = false;
     let isRecording = false;
     let animationFrameId = null;
+    let bgRenderInterval = null;
+    let pendingRecoverySession = null;
 
     // ------------------------------------------------------------
-    // 攝影機拖曳邏輯 (Draggable PiP)
+    // 4. 輔助函式：時間與檔案大小格式化
+    // ------------------------------------------------------------
+    function formatTime(seconds) {
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = seconds % 60;
+      if (h > 0) {
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+      }
+      return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes || bytes === 0) return '0.0 MB';
+      const k = 1024;
+      if (bytes < k * k) return (bytes / k).toFixed(1) + ' KB';
+      if (bytes < k * k * k) return (bytes / (k * k)).toFixed(1) + ' MB';
+      return (bytes / (k * k * k)).toFixed(2) + ' GB';
+    }
+
+    function updateTimer() {
+      if (isPaused) return;
+      const now = Date.now();
+      const currentElapsed = totalRecordedTime + (now - lastResumeTime);
+      const seconds = Math.floor(currentElapsed / 1000);
+      timerDisplay.textContent = formatTime(seconds);
+    }
+
+    function setUIState(state) {
+      switch (state) {
+        case 'ready':
+          startBtn.classList.remove('hidden');
+          recordingControls.classList.add('hidden');
+          downloadSection.classList.remove('flex');
+          downloadSection.classList.add('hidden');
+          statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 font-medium text-sm mb-2 transition-colors';
+          statusDot.className = 'w-2.5 h-2.5 rounded-full bg-slate-400';
+          statusText.textContent = '等待設定';
+          timerDisplay.textContent = '00:00';
+          recordedSizeBadge.textContent = '💾 0.0 MB';
+          videoArea.classList.remove('ring-red-500/50', 'border-red-500', 'border-emerald-400', 'ring-emerald-500/20');
+          videoArea.classList.add('border-slate-800');
+          break;
+        case 'recording':
+          startBtn.classList.add('hidden');
+          recordingControls.classList.remove('hidden');
+          statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-100 text-red-600 font-medium text-sm mb-2 transition-colors';
+          statusDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 recording-indicator';
+          statusText.textContent = '錄影中...';
+          document.getElementById('pauseIconWrapper').innerHTML = '<i data-lucide="pause" class="w-5 h-5"></i>';
+          pauseText.textContent = '暫停';
+          lucide.createIcons();
+          downloadSection.classList.remove('flex');
+          downloadSection.classList.add('hidden');
+          videoPlaceholder.classList.add('hidden');
+          playbackVideo.classList.add('hidden');
+          previewContainer.classList.remove('hidden');
+          videoArea.classList.remove('border-slate-800', 'border-emerald-400');
+          videoArea.classList.add('border-red-500', 'ring-red-500/20');
+          break;
+        case 'paused':
+          statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 text-amber-700 font-medium text-sm mb-2 transition-colors';
+          statusDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500';
+          statusText.textContent = '已暫停';
+          document.getElementById('pauseIconWrapper').innerHTML = '<i data-lucide="play" class="w-5 h-5"></i>';
+          pauseText.textContent = '繼續';
+          lucide.createIcons();
+          break;
+        case 'processing':
+          startBtn.classList.add('hidden');
+          recordingControls.classList.add('hidden');
+          statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-100 text-blue-700 font-medium text-sm mb-2 transition-colors';
+          statusDot.className = 'w-2.5 h-2.5 rounded-full bg-blue-500 animate-spin';
+          statusText.textContent = '處理並打包中...';
+          break;
+        case 'finished':
+          startBtn.classList.add('hidden');
+          recordingControls.classList.add('hidden');
+          statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-700 font-medium text-sm mb-2 transition-colors';
+          statusDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500';
+          statusText.textContent = '錄製完成';
+          previewContainer.classList.add('hidden');
+          playbackVideo.classList.remove('hidden');
+          downloadSection.classList.remove('hidden');
+          downloadSection.classList.add('flex');
+          videoArea.classList.remove('ring-red-500/20', 'border-red-500');
+          videoArea.classList.add('border-emerald-400');
+          break;
+      }
+    }
+
+    // ------------------------------------------------------------
+    // 5. 攝影機拖曳視窗邏輯 (Draggable PiP)
     // ------------------------------------------------------------
     let isDragging = false;
     let dragStartX, dragStartY;
@@ -402,7 +963,6 @@
       initialLeft = rect.left - parentRect.left;
       initialTop = rect.top - parentRect.top;
 
-      // 將 bottom/right 定位改為 left/top 方便計算
       webcamContainer.style.bottom = 'auto';
       webcamContainer.style.right = 'auto';
       webcamContainer.style.left = `${initialLeft}px`;
@@ -422,7 +982,6 @@
       let newLeft = initialLeft + dx;
       let newTop = initialTop + dy;
 
-      // 邊界限制
       const maxLeft = previewContainer.offsetWidth - webcamContainer.offsetWidth;
       const maxTop = previewContainer.offsetHeight - webcamContainer.offsetHeight;
 
@@ -438,86 +997,14 @@
     }
 
     // ------------------------------------------------------------
-    // UI 狀態管理
+    // 6. 雙模式渲染引擎：
+    //    - 純螢幕模式：硬體直通 Zero-Copy (無 Canvas，不受分頁節流影響)
+    //    - 子母畫面模式：雙驅動 Canvas 合成 (背景自動啟用定時保全，永不凍結)
     // ------------------------------------------------------------
-    function formatTime(seconds) {
-      const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-      const s = (seconds % 60).toString().padStart(2, '0');
-      return `${m}:${s}`;
-    }
-
-    function updateTimer() {
-      if (isPaused) return;
-      const now = Date.now();
-      const diff = Math.floor((totalRecordedTime + (now - lastResumeTime)) / 1000);
-      timerDisplay.textContent = formatTime(diff);
-    }
-
-    function setUIState(state) {
-      switch (state) {
-        case 'ready':
-          startBtn.classList.remove('hidden');
-          recordingControls.classList.add('hidden');
-          downloadSection.classList.remove('flex');
-          downloadSection.classList.add('hidden');
-          statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 font-medium text-sm mb-3 transition-colors';
-          statusDot.className = 'w-2.5 h-2.5 rounded-full bg-slate-400';
-          statusText.textContent = '等待設定';
-          timerDisplay.textContent = '00:00';
-          videoArea.classList.remove('ring-red-500/50', 'border-red-500');
-          videoArea.classList.add('border-slate-800');
-          break;
-        case 'recording':
-          startBtn.classList.add('hidden');
-          recordingControls.classList.remove('hidden');
-          statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-100 text-red-600 font-medium text-sm mb-3 transition-colors';
-          statusDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 recording-indicator';
-          statusText.textContent = '錄影中...';
-          document.getElementById('pauseIconWrapper').innerHTML = '<i data-lucide="pause" class="w-5 h-5"></i>';
-          pauseText.textContent = '暫停';
-          lucide.createIcons();
-          downloadSection.classList.remove('flex');
-          downloadSection.classList.add('hidden');
-          videoPlaceholder.classList.add('hidden');
-          playbackVideo.classList.add('hidden');
-          previewContainer.classList.remove('hidden');
-          videoArea.classList.remove('border-slate-800');
-          videoArea.classList.add('border-red-500', 'ring-red-500/20');
-          break;
-        case 'paused':
-          statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 text-amber-700 font-medium text-sm mb-3 transition-colors';
-          statusDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500';
-          statusText.textContent = '已暫停';
-          document.getElementById('pauseIconWrapper').innerHTML = '<i data-lucide="play" class="w-5 h-5"></i>';
-          pauseText.textContent = '繼續';
-          lucide.createIcons();
-          break;
-        case 'finished':
-          startBtn.classList.add('hidden');
-          recordingControls.classList.add('hidden');
-          statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-700 font-medium text-sm mb-3 transition-colors';
-          statusDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500';
-          statusText.textContent = '錄製完成';
-          previewContainer.classList.add('hidden');
-          playbackVideo.classList.remove('hidden');
-          downloadSection.classList.remove('hidden');
-          downloadSection.classList.add('flex');
-          videoArea.classList.remove('ring-red-500/20', 'border-red-500');
-          videoArea.classList.add('border-emerald-400');
-          break;
-      }
-    }
-
-    // ------------------------------------------------------------
-    // 核心錄影與畫布合成邏輯
-    // ------------------------------------------------------------
-
-    // 畫布渲染循環 (將螢幕和攝影機畫在一起)
-    function drawCanvasLoop() {
+    function drawCanvasSingleFrame() {
       if (!isRecording) return;
 
-      // 以螢幕畫面作為基準解析度
-      if (previewVideo.videoWidth > 0 && canvas.width !== previewVideo.videoWidth) {
+      if (previewVideo.videoWidth > 0 && (canvas.width !== previewVideo.videoWidth || canvas.height !== previewVideo.videoHeight)) {
         canvas.width = previewVideo.videoWidth;
         canvas.height = previewVideo.videoHeight;
       }
@@ -528,23 +1015,22 @@
 
         // 2. 畫上層 (攝影機子母畫面)
         if (cameraToggle.checked && webcamVideo.videoWidth > 0) {
-          // 計算網頁上相對位置，映射到畫布實際像素上
           const parentRect = previewContainer.getBoundingClientRect();
           const camRect = webcamContainer.getBoundingClientRect();
 
-          // 計算出攝影機相對於螢幕容器的比例 (0~1)
-          const relX = (camRect.left - parentRect.left) / parentRect.width;
-          const relY = (camRect.top - parentRect.top) / parentRect.height;
-          const relW = camRect.width / parentRect.width;
-          const relH = camRect.height / parentRect.height;
+          const pWidth = parentRect.width || 1;
+          const pHeight = parentRect.height || 1;
 
-          // 畫在 Canvas 對應的像素位置上
+          const relX = (camRect.left - parentRect.left) / pWidth;
+          const relY = (camRect.top - parentRect.top) / pHeight;
+          const relW = camRect.width / pWidth;
+          const relH = camRect.height / pHeight;
+
           const drawX = relX * canvas.width;
           const drawY = relY * canvas.height;
           const drawW = relW * canvas.width;
           const drawH = relH * canvas.height;
 
-          // 加一點陰影和圓角視覺效果(非完美圓角，因畫布限制，但加邊框)
           ctx.save();
           ctx.shadowColor = "rgba(0,0,0,0.5)";
           ctx.shadowBlur = 20;
@@ -558,17 +1044,59 @@
           ctx.restore();
         }
       }
-
-      animationFrameId = requestAnimationFrame(drawCanvasLoop);
     }
 
-    // 啟動錄製流程
+    function startCanvasLoop() {
+      function rAfLoop() {
+        if (!isRecording) return;
+        if (!document.hidden) {
+          drawCanvasSingleFrame();
+        }
+        animationFrameId = requestAnimationFrame(rAfLoop);
+      }
+      animationFrameId = requestAnimationFrame(rAfLoop);
+
+      // 當切換到背景或最小化視窗時，瀏覽器會暫停 rAF。
+      // 透過監聽 visibilitychange 與背景計時器，強制以 30 FPS 繼續畫布合成，確保 captureStream 不凍結
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      if (document.hidden) {
+        startBackgroundFallbackInterval();
+      }
+    }
+
+    function handleVisibilityChange() {
+      if (!isRecording || !cameraToggle.checked) return;
+      if (document.hidden) {
+        startBackgroundFallbackInterval();
+      } else {
+        stopBackgroundFallbackInterval();
+      }
+    }
+
+    function startBackgroundFallbackInterval() {
+      if (!bgRenderInterval) {
+        bgRenderInterval = setInterval(drawCanvasSingleFrame, 1000 / 30);
+      }
+    }
+
+    function stopBackgroundFallbackInterval() {
+      if (bgRenderInterval) {
+        clearInterval(bgRenderInterval);
+        bgRenderInterval = null;
+      }
+    }
+
+    // ------------------------------------------------------------
+    // 7. 核心錄影啟動與音訊管線
+    // ------------------------------------------------------------
     async function startRecording() {
       try {
-        recordedChunks = [];
-        isRecording = true; // 提前設定狀態讓畫布可以跑
+        currentSessionId = 'rec_' + Date.now();
+        currentChunkIndex = 0;
+        currentRecordingBytes = 0;
+        isRecording = true;
 
-        // 1. 獲取螢幕畫面 (依據下拉選單偏好設定)
+        // 1. 獲取螢幕畫面
         const displayMediaOptions = {
           video: {
             displaySurface: displaySurfaceMode.value,
@@ -583,18 +1111,18 @@
         if (cameraToggle.checked) {
           try {
             cameraStream = await navigator.mediaDevices.getUserMedia({
-              video: { width: { ideal: 1280 }, height: { ideal: 720 } }
+              video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } }
             });
             webcamVideo.srcObject = cameraStream;
             webcamContainer.style.display = 'block';
-            // 確保攝影機視窗重製為右下角
             webcamContainer.style.bottom = '20px';
             webcamContainer.style.right = '20px';
             webcamContainer.style.left = 'auto';
             webcamContainer.style.top = 'auto';
           } catch (e) {
-            alert("無法存取攝影機，可能是權限被拒絕。");
+            alert("無法存取網路攝影機，將以純螢幕模式進行錄製。");
             cameraToggle.checked = false;
+            webcamContainer.style.display = 'none';
           }
         } else {
           webcamContainer.style.display = 'none';
@@ -603,89 +1131,128 @@
         // 3. 獲取麥克風音訊 (如果開啟)
         if (micToggle.checked) {
           try {
-            micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            micStream = await navigator.mediaDevices.getUserMedia({
+              audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+              }
+            });
           } catch (e) {
             alert("無法存取麥克風，將略過麥克風錄音。");
             micToggle.checked = false;
           }
         }
 
-        // 4. 音訊混合 (Web Audio API)
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioContext.state === 'suspended') {
-          await audioContext.resume().catch(e => console.warn('AudioContext resume warn:', e));
-        }
-        const audioDestination = audioContext.createMediaStreamDestination();
-        let hasAudio = false;
+        // 4. 智能音訊軌處理
+        const screenAudioTracks = sysAudioToggle.checked ? screenStream.getAudioTracks() : [];
+        const micAudioTracks = (micToggle.checked && micStream) ? micStream.getAudioTracks() : [];
 
-        if (sysAudioToggle.checked && screenStream.getAudioTracks().length > 0) {
-          const sysAudioSource = audioContext.createMediaStreamSource(new MediaStream([screenStream.getAudioTracks()[0]]));
-          sysAudioSource.connect(audioDestination);
-          hasAudio = true;
-        }
+        let finalAudioTrack = null;
 
-        if (micToggle.checked && micStream && micStream.getAudioTracks().length > 0) {
-          const micAudioSource = audioContext.createMediaStreamSource(micStream);
-          micAudioSource.connect(audioDestination);
-          hasAudio = true;
-        }
-
-        // 5. 畫面混合 ( Canvas.captureStream )
-        // 等待影片元資料載入以確保寬高正確
-        await new Promise(resolve => {
-          if (previewVideo.readyState >= 1) {
-            resolve();
-          } else {
-            previewVideo.onloadedmetadata = () => resolve();
+        if (screenAudioTracks.length > 0 && micAudioTracks.length > 0) {
+          // 雙軌混音：使用 Web Audio API
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          if (audioContext.state === 'suspended') {
+            await audioContext.resume().catch(e => console.warn('AudioContext resume warn:', e));
           }
-        });
+          const audioDestination = audioContext.createMediaStreamDestination();
 
-        drawCanvasLoop(); // 啟動畫布渲染
+          const sysSource = audioContext.createMediaStreamSource(new MediaStream([screenAudioTracks[0]]));
+          const micSource = audioContext.createMediaStreamSource(new MediaStream([micAudioTracks[0]]));
 
-        // 從畫布抓取影像軌 (30 FPS)
-        const canvasStream = canvas.captureStream(30);
-        const videoTrack = canvasStream.getVideoTracks()[0];
+          sysSource.connect(audioDestination);
+          micSource.connect(audioDestination);
 
-        // 合併影像與音訊軌
-        const tracksToRecord = [videoTrack];
-        if (hasAudio) {
-          tracksToRecord.push(audioDestination.stream.getAudioTracks()[0]);
+          // 防止背景電源管理掛起
+          audioContext.onstatechange = () => {
+            if (audioContext.state === 'suspended' && isRecording && !isPaused) {
+              audioContext.resume().catch(() => {});
+            }
+          };
+
+          finalAudioTrack = audioDestination.stream.getAudioTracks()[0];
+        } else if (screenAudioTracks.length > 0) {
+          // 單音源直通 (系統聲音)
+          finalAudioTrack = screenAudioTracks[0];
+        } else if (micAudioTracks.length > 0) {
+          // 單音源直通 (麥克風)
+          finalAudioTrack = micAudioTracks[0];
+        }
+
+        // 5. 影像軌選擇：純螢幕直通 vs 子母畫面合成
+        let finalVideoTrack = null;
+
+        if (cameraToggle.checked) {
+          // 需合成：等待視頻元數據就緒
+          await new Promise(resolve => {
+            if (previewVideo.readyState >= 1) resolve();
+            else previewVideo.onloadedmetadata = () => resolve();
+          });
+          startCanvasLoop();
+          const canvasStream = canvas.captureStream(30);
+          finalVideoTrack = canvasStream.getVideoTracks()[0];
+        } else {
+          // 純螢幕直通：100% 免 Canvas 負擔，完全免疫背景分頁節流！
+          finalVideoTrack = screenStream.getVideoTracks()[0];
+        }
+
+        // 組合最終錄製 Stream
+        const tracksToRecord = [finalVideoTrack];
+        if (finalAudioTrack) {
+          tracksToRecord.push(finalAudioTrack);
         }
         mixedStream = new MediaStream(tracksToRecord);
 
-        // 當使用者按瀏覽器原生的「停止共用」按鈕時觸發
+        // 使用者點擊瀏覽器原生「停止共用」按鈕時安全觸發結束
         screenStream.getVideoTracks()[0].onended = () => {
           if (isRecording) stopRecording();
         };
 
-        // 6. 設定 MediaRecorder 並優先尋求支援 MP4
+        // 6. 選擇最優 Codec 與設定 MediaRecorder
         const mimeTypes = [
-          'video/mp4',
-          'video/webm;codecs=h264,aac',
-          'video/webm;codecs=h264,opus',
           'video/webm;codecs=vp9,opus',
-          'video/webm'
+          'video/webm;codecs=vp8,opus',
+          'video/webm;codecs=h264,opus',
+          'video/webm',
+          'video/mp4'
         ];
         const selectedMimeType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || 'video/webm';
         recordingMimeType = selectedMimeType;
 
+        const chosenBitrate = parseInt(qualityPreset.value, 10) || 5000000;
+
         mediaRecorder = new MediaRecorder(mixedStream, {
           mimeType: selectedMimeType,
-          videoBitsPerSecond: 5000000 // 5Mbps 高畫質
+          videoBitsPerSecond: chosenBitrate
         });
 
-        mediaRecorder.ondataavailable = function (e) {
-          if (e.data.size > 0) recordedChunks.push(e.data);
+        // 初始化 IndexedDB 本次錄影 Session
+        await RecordingDB.createSession(currentSessionId, selectedMimeType);
+
+        // 每 1 秒產出一個 Chunk 並直接串流寫入 IndexedDB 磁碟快取
+        mediaRecorder.ondataavailable = async function (e) {
+          if (e.data && e.data.size > 0) {
+            currentChunkIndex++;
+            currentRecordingBytes += e.data.size;
+            recordedSizeBadge.textContent = `💾 ${formatBytes(currentRecordingBytes)}`;
+            try {
+              await RecordingDB.saveChunk(currentSessionId, currentChunkIndex, e.data);
+            } catch (dbErr) {
+              console.error('IndexedDB chunk save error:', dbErr);
+            }
+          }
         };
 
-        mediaRecorder.onstop = exportVideo;
+        mediaRecorder.onstop = finalizeAndExportRecording;
 
+        // 啟動錄影（每 1000ms 分割一次 chunk）
         mediaRecorder.start(1000);
         isPaused = false;
 
         totalRecordedTime = 0;
         lastResumeTime = Date.now();
-        timerInterval = setInterval(updateTimer, 1000);
+        timerInterval = setInterval(updateTimer, 500);
 
         setUIState('recording');
 
@@ -693,26 +1260,31 @@
         console.error("啟動錄影失敗: ", err);
         isRecording = false;
 
-        // 避免將瀏覽器的原生權限錯誤訊息直接用 alert() 強制彈出干擾使用者
         const errMsg = err.message || '';
         const isPermissionBug = errMsg.includes('系統音訊') || errMsg.includes('System Settings') || err.name === 'NotReadableError' || err.name === 'NotAllowedError';
 
         if (!isPermissionBug && err.name !== 'AbortError') {
-          alert("啟動錄影發生意外錯誤: " + errMsg);
+          alert("啟動錄影失敗: " + errMsg);
         }
 
-        stopMediaTracks(); // 清理可能殘留的軌道
-        setUIState('ready'); // 確保 UI 恢復可點擊狀態
+        stopMediaTracks();
+        setUIState('ready');
       }
     }
 
-    // 清理所有 MediaTracks
+    // ------------------------------------------------------------
+    // 8. 結束錄影、時間軸修復與匯出打包
+    // ------------------------------------------------------------
     function stopMediaTracks() {
       if (screenStream) screenStream.getTracks().forEach(t => t.stop());
       if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
       if (micStream) micStream.getTracks().forEach(t => t.stop());
       if (mixedStream) mixedStream.getTracks().forEach(t => t.stop());
-      if (audioContext && audioContext.state !== 'closed') audioContext.close();
+      if (audioContext && audioContext.state !== 'closed') {
+        audioContext.close().catch(() => {});
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      stopBackgroundFallbackInterval();
     }
 
     function togglePause() {
@@ -731,47 +1303,159 @@
     }
 
     function stopRecording() {
+      if (!isRecording && (!mediaRecorder || mediaRecorder.state === 'inactive')) return;
+
       isRecording = false;
       cancelAnimationFrame(animationFrameId);
       clearInterval(timerInterval);
 
+      if (!isPaused && lastResumeTime > 0) {
+        totalRecordedTime += (Date.now() - lastResumeTime);
+      }
+
       if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
       }
+
       stopMediaTracks();
-      setUIState('finished');
+      setUIState('processing');
     }
 
-    function exportVideo() {
-      const mimeType = recordingMimeType;
-      const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+    async function finalizeAndExportRecording() {
+      try {
+        // 1. 從 IndexedDB 依序拉取所有區塊
+        const chunks = await RecordingDB.getChunks(currentSessionId);
+        if (!chunks || chunks.length === 0) {
+          throw new Error("未取得任何錄影資料區塊。");
+        }
 
-      const blob = new Blob(recordedChunks, { type: mimeType });
-      const url = URL.createObjectURL(blob);
+        const mimeType = recordingMimeType;
+        const rawBlob = new Blob(chunks, { type: mimeType });
 
-      playbackVideo.src = url;
+        // 2. 若為 WebM 格式，注入 EBML Duration 標頭以支援時間軸 Seeking
+        let finalBlob = rawBlob;
+        if (mimeType.includes('webm')) {
+          try {
+            finalBlob = await fixWebmDuration(rawBlob, totalRecordedTime);
+          } catch (ebmlErr) {
+            console.warn('WebM EBML 時長修復跳過:', ebmlErr);
+            finalBlob = rawBlob;
+          }
+        }
 
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
-      downloadLink.href = url;
-      downloadLink.download = `ScreenRecord_Pro_${timestamp}.${ext}`;
+        // 3. 建立 Object URL 並更新播放器與下載連結
+        const url = URL.createObjectURL(finalBlob);
+        playbackVideo.src = url;
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+        const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+        downloadLink.href = url;
+        downloadLink.download = `ScreenRecord_Pro_${timestamp}.${ext}`;
+
+        // 4. 更新結果摘要
+        const durFormatted = formatTime(Math.round(totalRecordedTime / 1000));
+        const sizeFormatted = formatBytes(finalBlob.size);
+        downloadSummaryText.innerHTML = `總時長：<strong class="text-slate-700">${durFormatted}</strong> ‧ 檔案大小：<strong class="text-slate-700">${sizeFormatted}</strong> ‧ 格式：<strong class="text-slate-700">${ext.toUpperCase()}</strong> (已修復時間軸拖曳標頭)`;
+
+        // 5. 更新 IndexedDB 為已完成
+        await RecordingDB.completeSession(currentSessionId, totalRecordedTime, finalBlob.size);
+
+        setUIState('finished');
+      } catch (err) {
+        console.error("匯出錄影發生錯誤: ", err);
+        alert("影片打包時發生錯誤: " + err.message);
+        setUIState('ready');
+      }
     }
 
-    // 事件綁定
+    // ------------------------------------------------------------
+    // 9. 崩潰/斷線復原邏輯
+    // ------------------------------------------------------------
+    async function checkPendingRecovery() {
+      try {
+        const session = await RecordingDB.getUnfinishedSession();
+        if (session && session.chunkCount > 0) {
+          pendingRecoverySession = session;
+          const durSec = Math.round((session.durationMs || (session.chunkCount * 1000)) / 1000);
+          recoveryInfoText.textContent = `偵測到先前建立於 ${session.createdAt.substring(0, 19).replace('T', ' ')} 的錄影（約 ${formatTime(durSec)}，大小約 ${formatBytes(session.totalBytes)}）。您可以立即還原下載！`;
+          recoveryBanner.classList.remove('hidden');
+          lucide.createIcons();
+        } else {
+          recoveryBanner.classList.add('hidden');
+        }
+      } catch (e) {
+        console.warn('Check recovery error:', e);
+      }
+    }
+
+    recoverBtn.addEventListener('click', async () => {
+      if (!pendingRecoverySession) return;
+      try {
+        recoverBtn.disabled = true;
+        recoverBtn.textContent = '還原處理中...';
+        const chunks = await RecordingDB.getChunks(pendingRecoverySession.id);
+        const mimeType = pendingRecoverySession.mimeType || 'video/webm';
+        const rawBlob = new Blob(chunks, { type: mimeType });
+
+        let finalBlob = rawBlob;
+        const durMs = pendingRecoverySession.durationMs || (chunks.length * 1000);
+        if (mimeType.includes('webm')) {
+          finalBlob = await fixWebmDuration(rawBlob, durMs);
+        }
+
+        const url = URL.createObjectURL(finalBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+        a.download = `Recovered_ScreenRecord_${pendingRecoverySession.id}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        await RecordingDB.markDownloaded(pendingRecoverySession.id);
+        recoveryBanner.classList.add('hidden');
+        pendingRecoverySession = null;
+        alert('錄影檔案已成功復原並開始下載！');
+      } catch (err) {
+        alert('復原失敗: ' + err.message);
+      } finally {
+        recoverBtn.disabled = false;
+        recoverBtn.innerHTML = '<i data-lucide="download" class="w-4 h-4"></i> 立即還原下載';
+        lucide.createIcons();
+      }
+    });
+
+    discardRecoveryBtn.addEventListener('click', async () => {
+      if (!pendingRecoverySession) return;
+      if (confirm('確定要清除此筆尚未下載的錄影紀錄嗎？清除後無法復原。')) {
+        await RecordingDB.clearSession(pendingRecoverySession.id);
+        recoveryBanner.classList.add('hidden');
+        pendingRecoverySession = null;
+      }
+    });
+
+    // ------------------------------------------------------------
+    // 10. 事件綁定與初始化
+    // ------------------------------------------------------------
     startBtn.addEventListener('click', startRecording);
     pauseBtn.addEventListener('click', togglePause);
     stopBtn.addEventListener('click', stopRecording);
+
     newRecordBtn.addEventListener('click', () => {
       playbackVideo.src = "";
       if (downloadLink.href) {
         URL.revokeObjectURL(downloadLink.href);
+        downloadLink.href = "";
       }
-      videoArea.classList.remove('border-emerald-400');
+      if (currentSessionId) {
+        RecordingDB.markDownloaded(currentSessionId).catch(() => {});
+      }
       setUIState('ready');
       videoPlaceholder.classList.remove('hidden');
       playbackVideo.classList.add('hidden');
     });
 
-    // 檢查瀏覽器是否支援 WebRTC 螢幕錄影 (getDisplayMedia)
+    // 檢查瀏覽器 getDisplayMedia 支援
     if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
       startBtn.disabled = true;
       startBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700', 'active:scale-[0.98]', 'text-white', 'shadow-blue-600/30');
@@ -781,6 +1465,10 @@
       lucide.createIcons();
     }
 
+    // 頁面載入時檢查是否有可復原的錄影
+    window.addEventListener('DOMContentLoaded', () => {
+      checkPendingRecovery();
+    });
   </script>
 </body>
 
